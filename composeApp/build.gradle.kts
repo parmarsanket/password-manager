@@ -1,4 +1,4 @@
-﻿import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -11,6 +11,7 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
     // Android target configured via androidLibrary block (replaces androidTarget + android{})
     androidLibrary {
         namespace = "com.sanket.tools.passwordmanager.composeapp"
@@ -18,7 +19,7 @@ kotlin {
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
 
         // Required for Compose Multiplatform resources to be bundled into the AAR
@@ -26,7 +27,6 @@ kotlin {
             enable = true
         }
     }
-
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -52,6 +52,7 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.materialKolor)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -75,6 +76,13 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "com.sanket.tools.passwordmanager.MainKt"
+
+        // Use the toolchain downloaded by Gradle instead of Android Studio's bundled JBR which lacks jpackage
+        val javaToolchains = project.extensions.getByType<JavaToolchainService>()
+        javaHome = javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+            vendor.set(JvmVendorSpec.ADOPTIUM) // 👈 ADD THIS
+        }.get().metadata.installationPath.asFile.absolutePath
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
