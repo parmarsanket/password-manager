@@ -8,6 +8,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 kotlin {
@@ -39,16 +45,16 @@ kotlin {
     
     jvm()
     
-    js {
-        browser()
-        binaries.executable()
-    }
+    // js {
+    //     browser()
+    //     binaries.executable()
+    // }
     
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
+    // @OptIn(ExperimentalWasmDsl::class)
+    // wasmJs {
+    //     browser()
+    //     binaries.executable()
+    // }
     
     sourceSets {
         commonMain.dependencies {
@@ -62,6 +68,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
