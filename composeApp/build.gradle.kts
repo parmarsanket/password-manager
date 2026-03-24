@@ -8,13 +8,9 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.androidx.room)
 }
 
-room {
-    schemaDirectory("$projectDir/schemas")
-}
+
 
 kotlin {
     jvmToolchain(21)
@@ -33,15 +29,16 @@ kotlin {
             enable = true
         }
     }
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
-        }
-    }
+    // ── iOS disabled — targets: Android + Desktop JVM only ──────────────
+    // listOf(
+    //     iosArm64(),
+    //     iosSimulatorArm64()
+    // ).forEach { iosTarget ->
+    //     iosTarget.binaries.framework {
+    //         baseName = "ComposeApp"
+    //         isStatic = true
+    //     }
+    // }
     
     jvm()
     
@@ -68,8 +65,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
-            implementation(libs.androidx.room.runtime)
-            implementation(libs.androidx.sqlite.bundled)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
         }
