@@ -107,6 +107,7 @@ class ExportCrypto(private val cryptoEngine: CryptoEngine) {
  * In-memory representation of the ZIP contents.
  * Converted to actual ZIP bytes by ExportManager / ImportManager.
  */
+@Serializable
 data class ExportPackage(
     val encryptedData: String,  // AES-GCM encrypted vault JSON (Base64)
     val meta: String            // meta.json content

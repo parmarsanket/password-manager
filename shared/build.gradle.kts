@@ -31,6 +31,12 @@ kotlin {
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.datastore.preferences)
+        }
+        androidMain.dependencies {
+            implementation(libs.androidx.datastore.preferences.android)
+            implementation(libs.androidx.biometric)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

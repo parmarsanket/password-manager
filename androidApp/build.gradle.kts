@@ -40,6 +40,7 @@ dependencies {
     implementation(projects.composeApp)
     implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
