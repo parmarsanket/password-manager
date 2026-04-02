@@ -215,10 +215,9 @@ internal fun VaultDashboardContent(
         ) {
             val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
 
-            // Memoized: avoids re-running the when + copy on every resize pixel.
-            val heroTitleStyle = remember(layout.widthClass) {
-                vaultHeroTitleStyle(layout.widthClass)
-            }
+            // vaultHeroTitleStyle is @Composable; Compose skips it automatically
+            // when widthClass hasn't changed, so no manual remember wrapper needed.
+            val heroTitleStyle = vaultHeroTitleStyle(layout.widthClass)
 
             when {
                 // ── Tablet landscape / Desktop — full two-pane sidebar ────────
