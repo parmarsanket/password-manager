@@ -99,7 +99,7 @@ fun DetailScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
 
             if (credential == null) {
                 Box(
@@ -120,7 +120,7 @@ fun DetailScreen(
                 return@BoxWithConstraints
             }
 
-            if (layout.useTwoPaneDetail) {
+            if (layout.useTwoPaneLayout) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()

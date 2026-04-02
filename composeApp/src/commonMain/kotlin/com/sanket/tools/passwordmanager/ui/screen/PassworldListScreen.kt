@@ -96,7 +96,7 @@ fun PassworldListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
 
             Column(
                 modifier = Modifier.fillMaxSize()

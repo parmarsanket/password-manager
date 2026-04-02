@@ -90,7 +90,7 @@ fun AddEditScreen(
                 .padding(padding)
                 .imePadding()
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
 
             LazyColumn(
                 modifier = Modifier

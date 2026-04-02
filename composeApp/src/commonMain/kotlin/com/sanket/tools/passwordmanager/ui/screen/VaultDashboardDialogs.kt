@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -66,25 +68,54 @@ internal fun VaultDetailDialog(
     onEdit: (Long) -> Unit,
     onDelete: (Long) -> Unit
 ) {
+    // Bug fix: guard deletion behind a confirmation dialog
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete entry?") },
+            text = {
+                Text(
+                    text = "\"${item.siteOrApp}\" and all its fields will be permanently deleted. This cannot be undone.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete(item.entryId)
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .imePadding()
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
             val dialogWidth = when (layout.widthClass) {
                 AdaptiveWidthClass.Compact -> 560.dp
                 AdaptiveWidthClass.Medium -> 700.dp
                 AdaptiveWidthClass.Expanded -> 780.dp
             }
             val titleStyle = when (layout.widthClass) {
-                AdaptiveWidthClass.Compact -> MaterialTheme.typography.headlineSmall
-                AdaptiveWidthClass.Medium -> MaterialTheme.typography.headlineMedium
+                AdaptiveWidthClass.Compact  -> MaterialTheme.typography.headlineSmall
+                AdaptiveWidthClass.Medium   -> MaterialTheme.typography.headlineMedium
                 AdaptiveWidthClass.Expanded -> MaterialTheme.typography.displaySmall
             }.copy(
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.SemiBold   // was Serif Italic — now uses M3 system font
             )
 
             Surface(
@@ -138,7 +169,15 @@ internal fun VaultDetailDialog(
                             Text("Edit")
                         }
 
-                        FilledTonalButton(onClick = { onDelete(item.entryId) }) {
+                        // Bug fix: show confirmation before deleting
+                        // Error-role colors mark Delete as a destructive action
+                        FilledTonalButton(
+                            onClick = { showDeleteConfirm = true },
+                            colors  = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor   = MaterialTheme.colorScheme.onErrorContainer,
+                            ),
+                        ) {
                             Icon(Icons.Default.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Delete")
@@ -173,7 +212,9 @@ internal fun VaultDetailFieldCard(
     field: DecryptedField,
     clipboardManager: ClipboardManager
 ) {
-    var revealed by rememberSaveable(field.fieldId) { mutableStateOf(!field.isSecret) }
+    // Bug fix: unique key per field using both index and fieldId so that
+    // unsaved fields (fieldId == 0) each get their own saveable slot
+    var revealed by rememberSaveable(field.fieldId, field.label) { mutableStateOf(!field.isSecret) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -241,7 +282,7 @@ internal fun VaultEditorDialog(
                 .fillMaxWidth()
                 .imePadding()
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
             val dialogWidth = when (layout.widthClass) {
                 AdaptiveWidthClass.Compact -> 560.dp
                 AdaptiveWidthClass.Medium -> 720.dp
@@ -263,16 +304,18 @@ internal fun VaultEditorDialog(
                     verticalArrangement = Arrangement.spacedBy(18.dp)
                 ) {
                     Text(
-                        text = if (state.isEditMode) "Edit entry" else "New entry",
+                        text  = if (state.isEditMode) "Edit entry" else "New entry",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = FontFamily.Serif,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.SemiBold  // was Serif — consistent with M3
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
-                        text = "Keep everything in one vault screen. Update the fields here and save.",
+                        text = if (state.isEditMode)
+                            "Edit the fields below and save your changes."
+                        else
+                            "Keep everything in one vault screen. Update the fields here and save.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -484,6 +527,7 @@ internal fun BackupPasswordDialog(
             }
         },
         dismissButton = {
+            // Bug fix: guard dismiss with !isBusy, same as onDismissRequest
             TextButton(
                 onClick = onDismiss,
                 enabled = !isBusy

@@ -67,7 +67,7 @@ fun UnlockScreen(
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
         ) {
-            val layout = adaptiveLayoutSpec(maxWidth)
+            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
             val headlineStyle = if (layout.widthClass == AdaptiveWidthClass.Expanded) {
                 MaterialTheme.typography.headlineLarge
             } else {
