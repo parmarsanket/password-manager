@@ -54,146 +54,146 @@ import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.CategoryTemplate
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-fun AddEditScreen(
-    viewModel: AddEditViewModel,
-    entryId: Long? = null,
-    onBack: () -> Unit
-) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(entryId) {
-        viewModel.loadEntry(entryId)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (uiState.isEditMode) "Edit Entry" else "New Entry") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = { viewModel.save(onBack) }) {
-                        Text("Save", fontWeight = FontWeight.Bold)
-                    }
-                }
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .imePadding()
-        ) {
-            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = layout.contentMaxWidth)
-                    .align(Alignment.TopCenter),
-                contentPadding = PaddingValues(
-                    start = layout.horizontalPadding,
-                    top = layout.verticalPadding,
-                    end = layout.horizontalPadding,
-                    bottom = layout.verticalPadding
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    if (layout.widthClass == AdaptiveWidthClass.Compact) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.emoji,
-                                onValueChange = { viewModel.onEmojiChange(it) },
-                                label = { Text("Icon") },
-                                modifier = Modifier.width(96.dp),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = uiState.siteName,
-                                onValueChange = { viewModel.onSiteNameChange(it) },
-                                label = { Text("Site or App Name") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-                        }
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = uiState.emoji,
-                                onValueChange = { viewModel.onEmojiChange(it) },
-                                label = { Text("Icon") },
-                                modifier = Modifier.width(96.dp),
-                                singleLine = true
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            OutlinedTextField(
-                                value = uiState.siteName,
-                                onValueChange = { viewModel.onSiteNameChange(it) },
-                                label = { Text("Site or App Name") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                        }
-                    }
-                }
-
-                if (!uiState.isEditMode) {
-                    item {
-                        Text("Quick Templates", style = MaterialTheme.typography.labelMedium)
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            TemplateChip("Website", { viewModel.applyTemplate(CategoryTemplate.WEBSITE) })
-                            TemplateChip("Bank", { viewModel.applyTemplate(CategoryTemplate.BANK) })
-                            TemplateChip("SIM", { viewModel.applyTemplate(CategoryTemplate.SIM) })
-                        }
-                    }
-                }
-
-                item { HorizontalDivider() }
-
-                itemsIndexed(uiState.fields) { index, field ->
-                    FieldItem(
-                        label = field.label,
-                        value = field.value,
-                        isSecret = field.isSecret,
-                        onLabelChange = { viewModel.onFieldChange(index, label = it) },
-                        onValueChange = { viewModel.onFieldChange(index, value = it) },
-                        onToggleSecret = { viewModel.onFieldChange(index, isSecret = !field.isSecret) },
-                        onRemove = { viewModel.removeField(index) }
-                    )
-                }
-
-                item {
-                    OutlinedButton(
-                        onClick = { viewModel.addField() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Custom Field")
-                    }
-                }
-            }
-        }
-    }
-}
+//@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+//@Composable
+//fun AddEditScreen(
+//    viewModel: AddEditViewModel,
+//    entryId: Long? = null,
+//    onBack: () -> Unit
+//) {
+//    val uiState by viewModel.uiState.collectAsState()
+//
+//    LaunchedEffect(entryId) {
+//        viewModel.loadEntry(entryId)
+//    }
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text(if (uiState.isEditMode) "Edit Entry" else "New Entry") },
+//                navigationIcon = {
+//                    IconButton(onClick = onBack) {
+//                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+//                    }
+//                },
+//                actions = {
+//                    TextButton(onClick = { viewModel.save(onBack) }) {
+//                        Text("Save", fontWeight = FontWeight.Bold)
+//                    }
+//                }
+//            )
+//        },
+//        containerColor = MaterialTheme.colorScheme.background
+//    ) { padding ->
+//        BoxWithConstraints(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(padding)
+//                .imePadding()
+//        ) {
+//            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
+//
+//            LazyColumn(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .widthIn(max = layout.contentMaxWidth)
+//                    .align(Alignment.TopCenter),
+//                contentPadding = PaddingValues(
+//                    start = layout.horizontalPadding,
+//                    top = layout.verticalPadding,
+//                    end = layout.horizontalPadding,
+//                    bottom = layout.verticalPadding
+//                ),
+//                verticalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                item {
+//                    if (layout.widthClass == AdaptiveWidthClass.Compact) {
+//                        Column(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            verticalArrangement = Arrangement.spacedBy(12.dp)
+//                        ) {
+//                            OutlinedTextField(
+//                                value = uiState.emoji,
+//                                onValueChange = { viewModel.onEmojiChange(it) },
+//                                label = { Text("Icon") },
+//                                modifier = Modifier.width(96.dp),
+//                                singleLine = true
+//                            )
+//                            OutlinedTextField(
+//                                value = uiState.siteName,
+//                                onValueChange = { viewModel.onSiteNameChange(it) },
+//                                label = { Text("Site or App Name") },
+//                                modifier = Modifier.fillMaxWidth(),
+//                                singleLine = true
+//                            )
+//                        }
+//                    } else {
+//                        Row(verticalAlignment = Alignment.CenterVertically) {
+//                            OutlinedTextField(
+//                                value = uiState.emoji,
+//                                onValueChange = { viewModel.onEmojiChange(it) },
+//                                label = { Text("Icon") },
+//                                modifier = Modifier.width(96.dp),
+//                                singleLine = true
+//                            )
+//                            Spacer(modifier = Modifier.width(16.dp))
+//                            OutlinedTextField(
+//                                value = uiState.siteName,
+//                                onValueChange = { viewModel.onSiteNameChange(it) },
+//                                label = { Text("Site or App Name") },
+//                                modifier = Modifier.weight(1f),
+//                                singleLine = true
+//                            )
+//                        }
+//                    }
+//                }
+//
+//                if (!uiState.isEditMode) {
+//                    item {
+//                        Text("Quick Templates", style = MaterialTheme.typography.labelMedium)
+//                        FlowRow(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(top = 8.dp),
+//                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                            verticalArrangement = Arrangement.spacedBy(8.dp)
+//                        ) {
+//                            TemplateChip("Website", { viewModel.applyTemplate(CategoryTemplate.WEBSITE) })
+//                            TemplateChip("Bank", { viewModel.applyTemplate(CategoryTemplate.BANK) })
+//                            TemplateChip("SIM", { viewModel.applyTemplate(CategoryTemplate.SIM) })
+//                        }
+//                    }
+//                }
+//
+//                item { HorizontalDivider() }
+//
+//                itemsIndexed(uiState.fields) { index, field ->
+//                    FieldItem(
+//                        label = field.label,
+//                        value = field.value,
+//                        isSecret = field.isSecret,
+//                        onLabelChange = { viewModel.onFieldChange(index, label = it) },
+//                        onValueChange = { viewModel.onFieldChange(index, value = it) },
+//                        onToggleSecret = { viewModel.onFieldChange(index, isSecret = !field.isSecret) },
+//                        onRemove = { viewModel.removeField(index) }
+//                    )
+//                }
+//
+//                item {
+//                    OutlinedButton(
+//                        onClick = { viewModel.addField() },
+//                        modifier = Modifier.fillMaxWidth(),
+//                        shape = RoundedCornerShape(12.dp)
+//                    ) {
+//                        Icon(Icons.Default.Add, contentDescription = null)
+//                        Spacer(modifier = Modifier.width(8.dp))
+//                        Text("Add Custom Field")
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 
 @Composable
 fun TemplateChip(label: String, onClick: () -> Unit) {
