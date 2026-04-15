@@ -1,5 +1,8 @@
 package com.sanket.tools.passwordmanager.ui.screen
 
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,9 +21,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Inbox
@@ -52,199 +57,205 @@ import com.sanket.tools.passwordmanager.domain.model.CredentialItem
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.viewmodel.PassworldViewModel
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PassworldListScreen(
-    viewModel: PassworldViewModel,
-    onAddEntry: () -> Unit,
-    onEntryClick: (Long) -> Unit,
-    onLogout: () -> Unit
-) {
-    val items by viewModel.items.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("My Passworld", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.Logout, contentDescription = "Logout")
-                    }
-                },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddEntry,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Entry")
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
-
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.onSearch(it) },
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .fillMaxWidth()
-                        .widthIn(max = layout.contentMaxWidth)
-                        .padding(
-                            start = layout.horizontalPadding,
-                            end = layout.horizontalPadding,
-                            top = 8.dp,
-                            bottom = 4.dp
-                        ),
-                    placeholder = { Text("Search your passworld...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    singleLine = true
-                )
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    val contentModifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = layout.contentMaxWidth)
-                        .align(Alignment.TopCenter)
-
-                    if (items.isEmpty()) {
-                        EmptyState(
-                            modifier = contentModifier.padding(
-                                horizontal = layout.horizontalPadding,
-                                vertical = layout.verticalPadding
-                            )
-                        )
-                    } else if (layout.widthClass == AdaptiveWidthClass.Compact) {
-                        LazyColumn(
-                            modifier = contentModifier,
-                            contentPadding = PaddingValues(
-                                start = layout.horizontalPadding,
-                                top = 12.dp,
-                                end = layout.horizontalPadding,
-                                bottom = 96.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(items, key = { it.entryId }) { item ->
-                                PassworldCard(
-                                    item = item,
-                                    onClick = { onEntryClick(item.entryId) }
-                                )
-                            }
-                        }
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(layout.listMinCellSize),
-                            modifier = contentModifier,
-                            contentPadding = PaddingValues(
-                                start = layout.horizontalPadding,
-                                top = 12.dp,
-                                end = layout.horizontalPadding,
-                                bottom = 96.dp
-                            ),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            gridItems(items, key = { it.entryId }) { item ->
-                                PassworldCard(
-                                    item = item,
-                                    onClick = { onEntryClick(item.entryId) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PassworldCard(
-    item: CredentialItem,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = item.iconEmoji, fontSize = 24.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.siteOrApp,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                val fieldsSummary = item.fields.take(2).joinToString(", ") { it.label }
-                if (fieldsSummary.isNotEmpty()) {
-                    Text(
-                        text = fieldsSummary,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-        }
-    }
-}
-
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun PassworldListScreen(
+//    viewModel: PassworldViewModel,
+//    onAddEntry: () -> Unit,
+//    onEntryClick: (Long) -> Unit,
+//    onLogout: () -> Unit
+//) {
+//    val items by viewModel.items.collectAsState()
+//    val searchQuery by viewModel.searchQuery.collectAsState()
+//
+//    Scaffold(
+//        topBar = {
+//            LargeTopAppBar(
+//                title = { Text("My Passworld", fontWeight = FontWeight.Bold) },
+//                actions = {
+//                    IconButton(onClick = onLogout) {
+//                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
+//                    }
+//                },
+//                colors = TopAppBarDefaults.largeTopAppBarColors(
+//                    containerColor = MaterialTheme.colorScheme.background,
+//                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+//                )
+//            )
+//        },
+//        floatingActionButton = {
+//            FloatingActionButton(
+//                onClick = onAddEntry,
+//                containerColor = MaterialTheme.colorScheme.primary,
+//                contentColor = MaterialTheme.colorScheme.onPrimary,
+//                shape = RoundedCornerShape(16.dp)
+//            ) {
+//                Icon(Icons.Default.Add, contentDescription = "Add Entry")
+//            }
+//        },
+//        containerColor = MaterialTheme.colorScheme.background
+//    ) { padding ->
+//        BoxWithConstraints(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(padding)
+//        ) {
+//            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
+//
+//            Column(
+//                modifier = Modifier.fillMaxSize()
+//            ) {
+//                OutlinedTextField(
+//                    value = searchQuery,
+//                    onValueChange = { viewModel.onSearch(it) },
+//                    modifier = Modifier
+//                        .align(Alignment.CenterHorizontally)
+//                        .fillMaxWidth()
+//                        .widthIn(max = layout.contentMaxWidth)
+//                        .padding(
+//                            start = layout.horizontalPadding,
+//                            end = layout.horizontalPadding,
+//                            top = 8.dp,
+//                            bottom = 4.dp
+//                        ),
+//                    placeholder = { Text("Search your passworld...") },
+//                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = OutlinedTextFieldDefaults.colors(
+//                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+//                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+//                    ),
+//                    singleLine = true
+//                )
+//
+//                Box(modifier = Modifier.fillMaxSize()) {
+//                    val contentModifier = Modifier
+//                        .fillMaxSize()
+//                        .widthIn(max = layout.contentMaxWidth)
+//                        .align(Alignment.TopCenter)
+//
+//                    if (items.isEmpty()) {
+//                        EmptyState(
+//                            modifier = contentModifier.padding(
+//                                horizontal = layout.horizontalPadding,
+//                                vertical = layout.verticalPadding
+//                            )
+//                        )
+//                    } else if (layout.widthClass == AdaptiveWidthClass.Compact) {
+//                        LazyColumn(
+//                            modifier = contentModifier,
+//                            contentPadding = PaddingValues(
+//                                start = layout.horizontalPadding,
+//                                top = 12.dp,
+//                                end = layout.horizontalPadding,
+//                                bottom = 96.dp
+//                            ),
+//                            verticalArrangement = Arrangement.spacedBy(12.dp)
+//                        ) {
+//                            items(items, key = { it.entryId }) { item ->
+//                                PassworldCard(
+//                                    item = item,
+//                                    onClick = { onEntryClick(item.entryId) }
+//                                )
+//                            }
+//                        }
+//                    } else {
+//                        LazyVerticalGrid(
+//                            columns = GridCells.Adaptive(layout.listMinCellSize),
+//                            modifier = contentModifier,
+//                            contentPadding = PaddingValues(
+//                                start = layout.horizontalPadding,
+//                                top = 12.dp,
+//                                end = layout.horizontalPadding,
+//                                bottom = 96.dp
+//                            ),
+//                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                            verticalArrangement = Arrangement.spacedBy(16.dp)
+//                        ) {
+//                            gridItems(items, key = { it.entryId }) { item ->
+//                                PassworldCard(
+//                                    item = item,
+//                                    onClick = { onEntryClick(item.entryId) }
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//fun PassworldCard(
+//    item: CredentialItem,
+//    onClick: () -> Unit
+//) {
+//    Card(
+//        onClick = onClick,
+//        modifier = Modifier.fillMaxWidth(),
+//        shape = RoundedCornerShape(16.dp),
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+//        )
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .padding(16.dp)
+//                .fillMaxWidth(),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Surface(
+//                modifier = Modifier.size(48.dp),
+//                shape = RoundedCornerShape(12.dp),
+//                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+//            ) {
+//                Box(contentAlignment = Alignment.Center) {
+//                    Text(text = item.iconEmoji, fontSize = 24.sp)
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.width(16.dp))
+//
+//            Column(modifier = Modifier.weight(1f)) {
+//                Text(
+//                    text = item.siteOrApp,
+//                    style = MaterialTheme.typography.titleMedium,
+//                    fontWeight = FontWeight.Bold,
+//                    color = MaterialTheme.colorScheme.onSurface
+//                )
+//
+//                val fieldsSummary = item.fields.take(2).joinToString(", ") { it.label }
+//                if (fieldsSummary.isNotEmpty()) {
+//                    Text(
+//                        text = fieldsSummary,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                }
+//            }
+//
+//            Icon(
+//                imageVector = Icons.Default.ChevronRight,
+//                contentDescription = null,
+//                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+//            )
+//        }
+//    }
+//}
+//
 @Composable
 fun EmptyState(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    val heroAreaScrollState = rememberScrollableState { it ->  0f }
+    Column (
+        modifier = modifier.fillMaxSize().scrollable(
+            state = heroAreaScrollState,
+            orientation = Orientation.Vertical
+        ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
@@ -255,7 +266,7 @@ fun EmptyState(modifier: Modifier = Modifier) {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Your passworld is empty",
+                text = "Your password is empty",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

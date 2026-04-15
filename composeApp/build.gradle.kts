@@ -69,6 +69,9 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+
+            //will removie on release
+            implementation("co.touchlab:kermit:2.1.0")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

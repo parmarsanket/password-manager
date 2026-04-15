@@ -123,7 +123,7 @@ fun adaptiveLayoutSpec(maxWidth: Dp, maxHeight: Dp): AdaptiveLayoutSpec {
             formMaxWidth        = 560.dp,
             listMinCellSize     = 280.dp,
             paneSpacing         = 20.dp,
-            sidebarWidth        = 0.dp,
+            sidebarWidth        = 220.dp,
             compactSidebarWidth = 220.dp,  // narrow action strip for landscape
             contentSpacing      = 12.dp,   // tighter on short screens
             useTwoPaneLayout    = false,

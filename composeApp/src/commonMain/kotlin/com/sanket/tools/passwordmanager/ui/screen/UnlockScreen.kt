@@ -186,7 +186,8 @@ fun UnlockScreen(
                                     }
                                 }
 
-                                is UnlockUiState.NeedsLogin -> {
+                                is UnlockUiState.NeedsLogin,
+                                is UnlockUiState.Error -> {
                                     if (password.isNotEmpty()) {
                                         viewModel.login(password)
                                     }

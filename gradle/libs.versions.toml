@@ -1,5 +1,5 @@
 [versions]
-agp = "9.0.1"
+agp = "9.1.1"
 android-compileSdk = "36"
 android-minSdk = "24"
 android-targetSdk = "36"
@@ -22,10 +22,10 @@ logback = "1.5.32"
 room = "2.8.4"
 sqlite = "2.6.2"
 ksp = "2.3.5"
-koin = "4.2.0"
+koin = "4.2.1"
 datastore = "1.2.1"
 material3 = "1.10.0-alpha05"
-kotlinx-serialization = "1.10.0"
+kotlinx-serialization = "1.11.0"
 
 [libraries]
 #room db

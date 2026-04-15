@@ -223,7 +223,7 @@ internal fun VaultDashboardContent(
                 // ── Tablet landscape / Desktop — full two-pane sidebar ────────
                 layout.useTwoPaneLayout -> TwoPaneLayout(
                     layout          = layout,
-                    sidebarModifier = Modifier.width(layout.sidebarWidth),
+                    sidebarModifier = Modifier,   // sidebar manages its own animated width
                     heroTitleStyle  = heroTitleStyle,
                     searchQuery     = searchQuery,
                     totalEntries    = items.size,
