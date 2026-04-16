@@ -99,9 +99,18 @@ actual class CryptoEngine actual constructor() {
         return hash.toHex()
     }
 
+    actual fun createPasswordVerifier(vaultKey: ByteArray): String {
+        return MessageDigest.getInstance("SHA-256")
+            .digest(vaultKey)
+            .toHex()
+    }
+
     actual fun verifyPassword(password: String, salt: ByteArray, storedHash: String): Boolean {
         val computedHash = hashPassword(password, salt)
-        return computedHash == storedHash
+        return MessageDigest.isEqual(
+            computedHash.encodeToByteArray(),
+            storedHash.encodeToByteArray()
+        )
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -63,8 +63,17 @@ actual class CryptoEngine actual constructor() {
         return hash.joinToString("") { "%02x".format(it) }
     }
 
+    actual fun createPasswordVerifier(vaultKey: ByteArray): String {
+        return MessageDigest.getInstance("SHA-256")
+            .digest(vaultKey)
+            .joinToString("") { "%02x".format(it) }
+    }
+
     actual fun verifyPassword(password: String, salt: ByteArray, storedHash: String): Boolean =
-        hashPassword(password, salt) == storedHash
+        MessageDigest.isEqual(
+            hashPassword(password, salt).encodeToByteArray(),
+            storedHash.encodeToByteArray()
+        )
 
     companion object {
         private const val AES_GCM_TRANSFORMATION = "AES/GCM/NoPadding"

@@ -12,6 +12,8 @@ actual class BiometricManager(
     private val activityProvider: ActivityProvider
 ) {
 
+    actual fun shouldOfferAuthentication(): Boolean = canAuthenticate()
+
     actual fun canAuthenticate(): Boolean {
         val manager = AndroidBiometricManager.from(context)
         val result = manager.canAuthenticate(
@@ -20,6 +22,8 @@ actual class BiometricManager(
         )
         return result == AndroidBiometricManager.BIOMETRIC_SUCCESS
     }
+
+    actual fun authenticationLabel(): String = "biometric"
 
     actual suspend fun authenticate(title: String, subtitle: String): AuthResult {
         if (!canAuthenticate()) return AuthResult.NotAvailable
@@ -40,7 +44,14 @@ actual class BiometricManager(
 
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                         if (continuation.isActive) {
-                            continuation.resume(AuthResult.Failure(errString.toString()))
+                            val result = when (errorCode) {
+                                BiometricPrompt.ERROR_CANCELED,
+                                BiometricPrompt.ERROR_USER_CANCELED,
+                                BiometricPrompt.ERROR_NEGATIVE_BUTTON -> AuthResult.Canceled
+
+                                else -> AuthResult.Failure(errString.toString())
+                            }
+                            continuation.resume(result)
                         }
                     }
 

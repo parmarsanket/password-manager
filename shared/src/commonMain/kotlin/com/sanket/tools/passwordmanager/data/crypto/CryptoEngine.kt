@@ -56,6 +56,14 @@ expect class CryptoEngine() {
     fun hashPassword(password: String, salt: ByteArray): String
 
     /**
+     * Builds the stored verifier hash from a derived vault key.
+     *
+     * This lets setup/login use a single PBKDF2 pass while still keeping
+     * a stable verifier in preferences.
+     */
+    fun createPasswordVerifier(vaultKey: ByteArray): String
+
+    /**
      * Verify a master password against a stored hash.
      */
     fun verifyPassword(password: String, salt: ByteArray, storedHash: String): Boolean

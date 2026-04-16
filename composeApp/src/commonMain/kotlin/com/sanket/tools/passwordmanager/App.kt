@@ -6,6 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -28,8 +31,11 @@ fun App() {
     val passworldViewModel: PassworldViewModel = koinInject()
     val addEditViewModel: AddEditViewModel = koinInject()
     val passworldKey by session.passworldKey.collectAsState()
+    var hasUnlockedInThisSession by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        unlockViewModel.refreshStatus()
+
         while (true) {
             delay(30000)
             session.checkTimeout()
@@ -37,7 +43,10 @@ fun App() {
     }
 
     LaunchedEffect(passworldKey) {
-        if (passworldKey == null) {
+        if (passworldKey != null) {
+            hasUnlockedInThisSession = true
+        } else if (hasUnlockedInThisSession) {
+            hasUnlockedInThisSession = false
             unlockViewModel.refreshStatus()
         }
     }
