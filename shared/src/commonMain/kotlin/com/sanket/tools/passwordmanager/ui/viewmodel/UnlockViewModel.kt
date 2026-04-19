@@ -265,14 +265,29 @@ class UnlockViewModel(
             if (!isSetup) {
                 _uiState.value = idleState(mode = UnlockMode.Setup)
             } else {
-                val biometricAvailable = withContext(Dispatchers.Default) {
-                    shouldShowDeviceAuthOption()
-                }
+                // Show the Login UI immediately so the password field is usable right away.
+                // Biometric availability is resolved asynchronously below.
                 _uiState.value = idleState(
                     mode = UnlockMode.Login,
-                    biometricAvailable = biometricAvailable,
+                    biometricAvailable = false,
                     biometricLabel = biometric.authenticationLabel()
                 )
+
+                // Resolve biometric support in the background – the button will
+                // appear once this completes without blocking the password field.
+                launch {
+                    val biometricAvailable = withContext(Dispatchers.Default) {
+                        shouldShowDeviceAuthOption()
+                    }
+                    if (biometricAvailable) {
+                        _uiState.update {
+                            it.copy(
+                                isBiometricAvailable = biometricAvailable,
+                                supportingText = defaultSupportingText(it.mode, biometricAvailable)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

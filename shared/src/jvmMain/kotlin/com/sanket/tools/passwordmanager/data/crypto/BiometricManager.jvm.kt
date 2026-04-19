@@ -2,13 +2,21 @@ package com.sanket.tools.passwordmanager.data.crypto
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.awt.KeyboardFocusManager
 import java.util.Base64
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 actual class BiometricManager {
 
     @Volatile
     private var cachedAvailability: Boolean? = null
+
+    /**
+     * Tracks which verification approach works on this machine so we don't
+     * waste time retrying the wrong one on every call.
+     */
+    @Volatile
+    private var preferredMethod: VerificationMethod = VerificationMethod.UNKNOWN
 
     actual fun shouldOfferAuthentication(): Boolean = isWindows()
 
@@ -65,22 +73,53 @@ actual class BiometricManager {
 
 
     private fun runVerification(promptMessage: String): String? {
+        // If we already know which method works, use it directly (skip the try/fallback loop).
+        when (preferredMethod) {
+            VerificationMethod.DESKTOP -> {
+                val result = runCatching {
+                    executePowerShell(buildDesktopVerificationScript(promptMessage))
+                }.getOrNull()
+                if (!result.isNullOrBlank() && result != RESULT_FALLBACK && !result.startsWith("Failed:")) {
+                    return result
+                }
+                // Desktop stopped working – reset and fall through to legacy
+                preferredMethod = VerificationMethod.UNKNOWN
+            }
+            VerificationMethod.LEGACY -> {
+                return runCatching {
+                    executePowerShell(buildLegacyVerificationScript(promptMessage))
+                }.getOrNull()
+            }
+            VerificationMethod.UNKNOWN -> { /* try desktop then legacy */ }
+        }
+
         val desktopResult = runCatching {
             executePowerShell(buildDesktopVerificationScript(promptMessage))
         }.getOrNull()
 
         val finalResult = when {
-            desktopResult.isNullOrBlank() -> runCatching {
-                executePowerShell(buildLegacyVerificationScript(promptMessage))
-            }.getOrNull()
+            desktopResult.isNullOrBlank() -> {
+                val legacyResult = runCatching {
+                    executePowerShell(buildLegacyVerificationScript(promptMessage))
+                }.getOrNull()
+                if (!legacyResult.isNullOrBlank()) preferredMethod = VerificationMethod.LEGACY
+                legacyResult
+            }
 
             desktopResult == RESULT_FALLBACK ||
                 desktopResult == RESULT_TIMEOUT ||
-                desktopResult.startsWith("Failed:") -> runCatching {
-                executePowerShell(buildLegacyVerificationScript(promptMessage))
-            }.getOrNull() ?: desktopResult
+                desktopResult.startsWith("Failed:") -> {
+                val legacyResult = runCatching {
+                    executePowerShell(buildLegacyVerificationScript(promptMessage))
+                }.getOrNull()
+                if (!legacyResult.isNullOrBlank()) preferredMethod = VerificationMethod.LEGACY
+                legacyResult ?: desktopResult
+            }
 
-            else -> desktopResult
+            else -> {
+                preferredMethod = VerificationMethod.DESKTOP
+                desktopResult
+            }
         }
 
         return finalResult
@@ -107,9 +146,17 @@ actual class BiometricManager {
         )
             .start()
 
-        val stdout = process.inputStream.bufferedReader().use { it.readText() }
-        val stderr = process.errorStream.bufferedReader().use { it.readText() }
+        // Read stdout and stderr in parallel to prevent deadlocks on large output
+        val stdoutFuture = CompletableFuture.supplyAsync {
+            process.inputStream.bufferedReader().use { it.readText() }
+        }
+        val stderrFuture = CompletableFuture.supplyAsync {
+            process.errorStream.bufferedReader().use { it.readText() }
+        }
+
         val exitCode = process.waitFor()
+        val stdout = stdoutFuture.get(5, TimeUnit.SECONDS)
+        val stderr = stderrFuture.get(5, TimeUnit.SECONDS)
         val output = sanitizePowerShellOutput(stdout)
         val errorOutput = sanitizePowerShellOutput(stderr)
         if (exitCode != 0) {
@@ -187,6 +234,12 @@ actual class BiometricManager {
     private fun buildDesktopVerificationScript(message: String): String = buildString {
         val ps = '$'
         appendLine("Add-Type -AssemblyName System.Runtime.WindowsRuntime")
+        // Cache the compiled interop assembly in TEMP so Add-Type compilation (~1.5s) only
+        // happens once per Windows session. Subsequent calls just load the tiny DLL.
+        appendLine("${ps}dllPath = Join-Path ${ps}env:TEMP 'PM_HelloInteropBridge_v2.dll'")
+        appendLine("if (Test-Path ${ps}dllPath) {")
+        appendLine("    Add-Type -Path ${ps}dllPath")
+        appendLine("} else {")
         appendLine("${ps}code = @\"")
         appendLine("using System;")
         appendLine("using System.Runtime.InteropServices;")
@@ -280,7 +333,13 @@ actual class BiometricManager {
         appendLine("    }")
         appendLine("}")
         appendLine("\"@")
-        appendLine("Add-Type -TypeDefinition ${ps}code -ReferencedAssemblies 'System.Runtime.WindowsRuntime'")
+        appendLine("    try {")
+        appendLine("        Add-Type -TypeDefinition ${ps}code -ReferencedAssemblies 'System.Runtime.WindowsRuntime' -OutputAssembly ${ps}dllPath")
+        appendLine("        Add-Type -Path ${ps}dllPath")
+        appendLine("    } catch {")
+        appendLine("        Add-Type -TypeDefinition ${ps}code -ReferencedAssemblies 'System.Runtime.WindowsRuntime'")
+        appendLine("    }")
+        appendLine("}")
         appendLine("${ps}parentPid = (Get-CimInstance Win32_Process -Filter \"ProcessId = ${ps}PID\").ParentProcessId")
         appendLine("${ps}message = @'")
         appendLine(message)
@@ -306,6 +365,8 @@ actual class BiometricManager {
         appendLine("if (-not ${ps}task.Wait(180000)) { [Console]::Out.Write(\"$RESULT_TIMEOUT\"); exit 0 }")
         appendLine("[Console]::Out.Write(${ps}task.Result.ToString())")
     }
+
+    private enum class VerificationMethod { UNKNOWN, DESKTOP, LEGACY }
 
     private companion object {
         const val RESULT_FALLBACK = "Fallback"
