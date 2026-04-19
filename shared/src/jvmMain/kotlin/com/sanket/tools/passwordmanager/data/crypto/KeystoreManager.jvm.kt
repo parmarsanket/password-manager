@@ -1,12 +1,13 @@
 package com.sanket.tools.passwordmanager.data.crypto
 
+import com.sanket.tools.passwordmanager.util.DesktopPathUtils
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.spec.SecretKeySpec
 
 /**
  * JVM Desktop actual: wraps the vault key in a PKCS12 keystore file
- * stored in the user's home directory.
+ * stored in the dedicated app data directory.
  *
  * The keystore is protected with a password derived from the OS username,
  * so it's tied to the local user account.
@@ -17,7 +18,7 @@ import javax.crypto.spec.SecretKeySpec
 actual class KeystoreManager {
 
     private val keystoreFile = File(
-        System.getProperty("user.home"),
+        DesktopPathUtils.getDataDirectory(),
         ".password_manager_keystore.p12"
     )
 
