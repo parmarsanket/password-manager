@@ -1,4 +1,4 @@
-﻿
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
@@ -38,9 +38,12 @@ kotlin {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(projects.shared)
     implementation(libs.androidx.activity.compose)
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
     implementation(libs.androidx.room.sqlite.wrapper)
+    implementation(libs.koin.core)
 }

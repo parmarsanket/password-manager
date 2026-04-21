@@ -2,7 +2,7 @@ package com.sanket.tools.passwordmanager.theme
 
 import androidx.compose.ui.graphics.Color
 
-val SeedColor = Color(0xFF87B2FF)
+val SeedColor = Color(0xFF535A97)
 
 val PrimaryLight = Color(0xFF2B5BA2)
 val OnPrimaryLight = Color(0xFFEFF2FF)
