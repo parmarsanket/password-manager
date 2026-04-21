@@ -31,8 +31,8 @@ class UnlockViewModel(
     private val _uiState = MutableStateFlow(UnlockUiState())
     val uiState: StateFlow<UnlockUiState> = _uiState.asStateFlow()
 
-    fun refreshStatus() {
-        checkAppStatus()
+    fun refreshStatus(autoPromptBiometric: Boolean = true) {
+        checkAppStatus(autoPromptBiometric)
     }
 
     fun clearFeedback() {
@@ -251,7 +251,7 @@ class UnlockViewModel(
         }
     }
 
-    private fun checkAppStatus() {
+    private fun checkAppStatus(autoPromptBiometric: Boolean = true) {
         viewModelScope.launch {
             if (session.isUnlocked) {
                 _uiState.update { it.copy(isUnlocked = true) }
@@ -279,14 +279,17 @@ class UnlockViewModel(
                     val biometricAvailable = withContext(Dispatchers.Default) {
                         shouldShowDeviceAuthOption()
                     }
-                    if (biometricAvailable) {
+//                    if (biometricAvailable) {
                         _uiState.update {
                             it.copy(
                                 isBiometricAvailable = biometricAvailable,
                                 supportingText = defaultSupportingText(it.mode, biometricAvailable)
                             )
                         }
-                    }
+                        if (autoPromptBiometric) {
+                            tryBiometricUnlock()
+                        }
+//                    }
                 }
             }
         }

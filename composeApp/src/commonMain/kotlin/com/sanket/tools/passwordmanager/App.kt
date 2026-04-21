@@ -47,7 +47,7 @@ fun App() {
             hasUnlockedInThisSession = true
         } else if (hasUnlockedInThisSession) {
             hasUnlockedInThisSession = false
-            unlockViewModel.refreshStatus()
+            unlockViewModel.refreshStatus(autoPromptBiometric = false)
         }
     }
 
