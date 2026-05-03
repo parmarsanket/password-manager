@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -51,22 +53,27 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sanket.tools.passwordmanager.ui.layout.AdaptiveLayoutSpec
+import com.sanket.tools.passwordmanager.ui.layout.AdaptivePosture
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockAction
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockMode
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockViewModel
+
 @Composable
 fun UnlockScreen(
     viewModel: UnlockViewModel,
@@ -134,288 +141,525 @@ fun UnlockScreen(
                         vertical = layout.verticalPadding
                     )
             ) {
+                when (layout.posture) {
+                    // ── Tablet landscape / Desktop — two-pane: branding + form ──
+                    AdaptivePosture.TabletLandscape -> UnlockTwoPaneLayout(
+                        layout = layout,
+                        headlineStyle = headlineStyle,
+                        formContent = {
+                            UnlockFormCard(
+                                layout = layout,
+                                headlineStyle = headlineStyle,
+                                uiState = uiState,
+                                password = password,
+                                confirmPassword = confirmPassword,
+                                passwordVisible = passwordVisible,
+                                errorMessage = errorMessage,
+                                passwordFocus = passwordFocus,
+                                confirmFocus = confirmFocus,
+                                buttonFocus = buttonFocus,
+                                focusManager = focusManager,
+                                viewModel = viewModel,
+                                onPasswordChange = { password = it },
+                                onConfirmPasswordChange = { confirmPassword = it },
+                                onToggleVisibility = { passwordVisible = !passwordVisible },
+                            )
+                        }
+                    )
+
+                    // ── Phone landscape — horizontal layout, compact branding strip ──
+                    AdaptivePosture.PhoneLandscape -> UnlockPhoneLandscapeLayout(
+                        layout = layout,
+                        formContent = {
+                            UnlockFormCard(
+                                layout = layout,
+                                headlineStyle = headlineStyle,
+                                uiState = uiState,
+                                password = password,
+                                confirmPassword = confirmPassword,
+                                passwordVisible = passwordVisible,
+                                errorMessage = errorMessage,
+                                passwordFocus = passwordFocus,
+                                confirmFocus = confirmFocus,
+                                buttonFocus = buttonFocus,
+                                focusManager = focusManager,
+                                viewModel = viewModel,
+                                onPasswordChange = { password = it },
+                                onConfirmPasswordChange = { confirmPassword = it },
+                                onToggleVisibility = { passwordVisible = !passwordVisible },
+                            )
+                        }
+                    )
+
+                    // ── Phone portrait / Tablet portrait — centered card ──
+                    AdaptivePosture.PhonePortrait,
+                    AdaptivePosture.TabletPortrait -> UnlockSinglePaneLayout(
+                        layout = layout,
+                        formContent = {
+                            UnlockFormCard(
+                                layout = layout,
+                                headlineStyle = headlineStyle,
+                                uiState = uiState,
+                                password = password,
+                                confirmPassword = confirmPassword,
+                                passwordVisible = passwordVisible,
+                                errorMessage = errorMessage,
+                                passwordFocus = passwordFocus,
+                                confirmFocus = confirmFocus,
+                                buttonFocus = buttonFocus,
+                                focusManager = focusManager,
+                                viewModel = viewModel,
+                                onPasswordChange = { password = it },
+                                onConfirmPasswordChange = { confirmPassword = it },
+                                onToggleVisibility = { passwordVisible = !passwordVisible },
+                            )
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Layout strategies
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Phone portrait / Tablet portrait — centered single card.
+ */
+@Composable
+private fun UnlockSinglePaneLayout(
+    layout: AdaptiveLayoutSpec,
+    formContent: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(modifier = Modifier.widthIn(max = layout.formMaxWidth)) {
+            formContent()
+        }
+    }
+}
+
+/**
+ * Phone landscape — compact branding strip on the left, form on the right.
+ * Screen is short so the branding is minimal (icon + title only).
+ */
+@Composable
+private fun UnlockPhoneLandscapeLayout(
+    layout: AdaptiveLayoutSpec,
+    formContent: @Composable () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(layout.paneSpacing),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // ── Compact branding strip ──────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .width(layout.compactSidebarWidth)
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Shield,
+                    contentDescription = null,
+                    modifier = Modifier.padding(14.dp).size(28.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "Passworld",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = "Manager",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        // ── Form card ───────────────────────────────────────────────────
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(modifier = Modifier.widthIn(max = layout.formMaxWidth)) {
+                formContent()
+            }
+        }
+    }
+}
+
+/**
+ * Tablet landscape / Desktop — decorative branding panel on the left,
+ * unlock form card on the right.
+ */
+@Composable
+private fun UnlockTwoPaneLayout(
+    layout: AdaptiveLayoutSpec,
+    headlineStyle: androidx.compose.ui.text.TextStyle,
+    formContent: @Composable () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(layout.paneSpacing),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // ── Branding sidebar ────────────────────────────────────────────
+        Surface(
+            modifier = Modifier
+                .width(layout.sidebarWidth)
+                .fillMaxHeight(),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 1.dp,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(layout.horizontalPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .fillMaxWidth()
-                        .widthIn(max = layout.formMaxWidth),
-                    shape = RoundedCornerShape(28.dp),
-                    tonalElevation = 10.dp,
-                    shadowElevation = 12.dp
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .onPreviewKeyEvent{event ->
-                                if (event.type == KeyEventType.KeyDown) {
-                                    when (event.key) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        modifier = Modifier.padding(22.dp).size(48.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
 
-                                        // 🔥 ENTER KEY
-//                                        Key.Enter -> {
-//                                            if (!uiState.isBusy) {
-//                                                if (uiState.mode == UnlockMode.Setup) {
-//                                                    viewModel.setupMasterPassword(password, confirmPassword)
-//                                                    focusManager.moveFocus(FocusDirection.Enter)
-//
-//                                                } else {
-//                                                    viewModel.login(password)
-//                                                    focusManager.moveFocus(FocusDirection.Enter)
-//                                                }
-//                                            }
-//                                            true
-//                                        }
+                Spacer(Modifier.height(24.dp))
 
-                                        // 🔽 ARROW DOWN
-                                        Key.DirectionDown -> {
-                                            focusManager.moveFocus(FocusDirection.Down)
+                Text(
+                    text = "Passworld Manager",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                )
 
-                                            true
-                                        }
+                Spacer(Modifier.height(12.dp))
 
-                                        // 🔼 ARROW UP
-                                        Key.DirectionUp -> {
-                                            focusManager.moveFocus(FocusDirection.Up)
-                                            true
-                                        }
+                Text(
+                    text = "Your passwords, secured everywhere.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
 
-                                        else -> false
-                                    }
-                                } else false
+        // ── Form card ───────────────────────────────────────────────────
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(modifier = Modifier.widthIn(max = layout.formMaxWidth)) {
+                formContent()
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Shared unlock form card — extracted so all postures reuse the same form
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun UnlockFormCard(
+    layout: AdaptiveLayoutSpec,
+    headlineStyle: androidx.compose.ui.text.TextStyle,
+    uiState: com.sanket.tools.passwordmanager.ui.viewmodel.UnlockUiState,
+    password: String,
+    confirmPassword: String,
+    passwordVisible: Boolean,
+    errorMessage: String?,
+    passwordFocus: FocusRequester,
+    confirmFocus: FocusRequester,
+    buttonFocus: FocusRequester,
+    focusManager: androidx.compose.ui.focus.FocusManager,
+    viewModel: UnlockViewModel,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onToggleVisibility: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        tonalElevation = 10.dp,
+        shadowElevation = 12.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown) {
+                        when (event.key) {
+                            // 🔽 ARROW DOWN
+                            Key.DirectionDown -> {
+                                focusManager.moveFocus(FocusDirection.Down)
+                                true
                             }
-                            .padding(28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer
+                            // 🔼 ARROW UP
+                            Key.DirectionUp -> {
+                                focusManager.moveFocus(FocusDirection.Up)
+                                true
+                            }
+                            else -> false
+                        }
+                    } else false
+                }
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // ── Icon — only shown in single-pane (two-pane has the sidebar branding)
+            if (layout.posture == AdaptivePosture.PhonePortrait ||
+                layout.posture == AdaptivePosture.TabletPortrait
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(18.dp)
+                            .size(if (layout.widthClass == AdaptiveWidthClass.Compact) 28.dp else 32.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Passworld Manager",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Text(
+                text = if (uiState.mode == UnlockMode.Setup) {
+                    "Create your master password"
+                } else {
+                    "Unlock your vault"
+                },
+                style = headlineStyle,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = uiState.supportingText,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Text(
+                        text = errorMessage,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    onPasswordChange(it)
+                    viewModel.clearFeedback()
+                },
+                // keyboardOptions MUST declare ImeAction.Done so the IME
+                // shows the "Done" action key AND so onDone fires on Enter.
+                // Without this, keyboardActions.onDone is never called.
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (!uiState.isBusy) {
+                            if (uiState.mode == UnlockMode.Setup) {
+                                // In Setup mode, move to confirm-password field
+                                confirmFocus.requestFocus()
+                            } else {
+                                viewModel.login(password)
+                            }
+                        }
+                    }
+                ),
+                label = { Text("Master Password") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocus),
+                visualTransformation = if (passwordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                trailingIcon = {
+                    IconButton(onClick = onToggleVisibility) {
+                        Icon(
+                            imageVector = if (passwordVisible) {
+                                Icons.Default.Visibility
+                            } else {
+                                Icons.Default.VisibilityOff
+                            },
+                            contentDescription = null
+                        )
+                    }
+                },
+                singleLine = true,
+                enabled = !uiState.isBusy,
+                isError = uiState.errorMessage != null
+            )
+
+            if (uiState.mode == UnlockMode.Setup) {
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        onConfirmPasswordChange(it)
+                        viewModel.clearFeedback()
+                    },
+                    // Enter on confirmPassword field submits the setup form
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (!uiState.isBusy) {
+                                viewModel.setupMasterPassword(password, confirmPassword)
+                            }
+                        }
+                    ),
+                    label = { Text("Confirm Password") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(confirmFocus),
+                    visualTransformation = if (passwordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    singleLine = true,
+                    enabled = !uiState.isBusy,
+                    isError = uiState.errorMessage != null
+                )
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // .focusable() lets Compose render the focus-ring highlight when
+            // this button is reached via ↓/↑ arrow-key navigation.
+            Button(
+                onClick = {
+                    if (uiState.mode == UnlockMode.Setup) {
+                        viewModel.setupMasterPassword(password, confirmPassword)
+                    } else {
+                        viewModel.login(password)
+                    }
+                },
+                modifier = Modifier
+                    .focusRequester(buttonFocus)
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !uiState.isBusy && uiState.mode != UnlockMode.Loading
+            ) {
+                if (uiState.activeAction == UnlockAction.Password) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        if (uiState.mode == UnlockMode.Setup) {
+                            "Create vault access"
+                        } else {
+                            "Unlock with master password"
+                        }
+                    )
+                }
+            }
+
+            if (uiState.mode == UnlockMode.Login && uiState.isBiometricAvailable) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                HorizontalDivider()
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Or use device verification",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedButton(
+                    onClick = { viewModel.tryBiometricUnlock() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !uiState.isBusy
+                ) {
+                    if (uiState.activeAction == UnlockAction.Biometric) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Lock,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(18.dp)
-                                    .size(if (layout.widthClass == AdaptiveWidthClass.Compact) 28.dp else 32.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                imageVector = Icons.Default.Fingerprint,
+                                contentDescription = null
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text(
-                            text = "Passworld Manager",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = if (uiState.mode == UnlockMode.Setup) {
-                                "Create your master password"
-                            } else {
-                                "Unlock your vault"
-                            },
-                            style = headlineStyle,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = uiState.supportingText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        if (errorMessage != null) {
-                            Spacer(modifier = Modifier.height(20.dp))
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(18.dp),
-                                color = MaterialTheme.colorScheme.errorContainer
-                            ) {
-                                Text(
-                                    text = errorMessage,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(28.dp))
-
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = {
-                                password = it
-                                viewModel.clearFeedback()
-                            },
-                            // keyboardOptions MUST declare ImeAction.Done so the IME
-                            // shows the "Done" action key AND so onDone fires on Enter.
-                            // Without this, keyboardActions.onDone is never called.
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    if (!uiState.isBusy) {
-                                        if (uiState.mode == UnlockMode.Setup) {
-                                            // In Setup mode, move to confirm-password field
-                                            confirmFocus.requestFocus()
-                                        } else {
-                                            viewModel.login(password)
-                                        }
-                                    }
-                                }
-                            ),
-                            label = { Text("Master Password") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(passwordFocus),
-                            visualTransformation = if (passwordVisible) {
-                                VisualTransformation.None
-                            } else {
-                                PasswordVisualTransformation()
-                            },
-                            trailingIcon = {
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) {
-                                            Icons.Default.Visibility
-                                        } else {
-                                            Icons.Default.VisibilityOff
-                                        },
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            singleLine = true,
-                            enabled = !uiState.isBusy,
-                            isError = uiState.errorMessage != null
-                        )
-
-                        if (uiState.mode == UnlockMode.Setup) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedTextField(
-                                value = confirmPassword,
-                                onValueChange = {
-                                    confirmPassword = it
-                                    viewModel.clearFeedback()
-                                },
-                                // Enter on confirmPassword field submits the setup form
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        if (!uiState.isBusy) {
-                                            viewModel.setupMasterPassword(password, confirmPassword)
-                                        }
-                                    }
-                                ),
-                                label = { Text("Confirm Password") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(confirmFocus),
-                                visualTransformation = if (passwordVisible) {
-                                    VisualTransformation.None
-                                } else {
-                                    PasswordVisualTransformation()
-                                },
-                                singleLine = true,
-                                enabled = !uiState.isBusy,
-                                isError = uiState.errorMessage != null
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(28.dp))
-
-                        // .focusable() lets Compose render the focus-ring highlight when
-                        // this button is reached via ↓/↑ arrow-key navigation.
-                        Button(
-                            onClick = {
-                                if (uiState.mode == UnlockMode.Setup) {
-                                    viewModel.setupMasterPassword(password, confirmPassword)
-                                } else {
-                                    viewModel.login(password)
-                                }
-                            },
-                            modifier = Modifier
-                                .focusRequester(buttonFocus)
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            enabled = !uiState.isBusy && uiState.mode != UnlockMode.Loading
-                        ) {
-                            if (uiState.activeAction == UnlockAction.Password) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(22.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text(
-                                    if (uiState.mode == UnlockMode.Setup) {
-                                        "Create vault access"
-                                    } else {
-                                        "Unlock with master password"
-                                    }
-                                )
-                            }
-                        }
-
-                        if (uiState.mode == UnlockMode.Login && uiState.isBiometricAvailable) {
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            HorizontalDivider()
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Text(
-                                text = "Or use device verification",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(20.dp))
-
-                            OutlinedButton(
-                                onClick = { viewModel.tryBiometricUnlock() },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                enabled = !uiState.isBusy
-                            ) {
-                                if (uiState.activeAction == UnlockAction.Biometric) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(22.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Fingerprint,
-                                            contentDescription = null
-                                        )
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text("Unlock with ${uiState.biometricLabel}")
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Text(
-                                text = "On supported phones and laptops, this can use fingerprint, face, or the system PIN.",
-                                style = MaterialTheme.typography.bodySmall,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Unlock with ${uiState.biometricLabel}")
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "On supported phones and laptops, this can use fingerprint, face, or the system PIN.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
