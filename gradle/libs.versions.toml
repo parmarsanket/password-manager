@@ -53,6 +53,7 @@ androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "a
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 # Optional Compose
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
 materialKolor = "com.materialkolor:material-kolor:5.0.0-alpha07"
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

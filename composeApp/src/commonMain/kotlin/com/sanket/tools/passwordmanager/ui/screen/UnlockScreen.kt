@@ -41,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,12 +61,19 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.layout.AdaptivePosture
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
@@ -80,15 +88,17 @@ fun UnlockScreen(
     onSuccess: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var password by rememberSaveable { mutableStateOf("") }
-    var confirmPassword by rememberSaveable { mutableStateOf("") }
-    var passwordVisible by rememberSaveable { mutableStateOf(false) }
-    val errorMessage = uiState.errorMessage
-
-    val passwordFocus = remember { FocusRequester() }
-    val confirmFocus = remember { FocusRequester() }
-    val buttonFocus = remember { FocusRequester() }
+    val screenState = rememberUnlockScreenState()
     val focusManager = LocalFocusManager.current
+    val windowInfo = LocalWindowInfo.current
+
+    LaunchedEffect(windowInfo.isWindowFocused) {
+        if (windowInfo.isWindowFocused && uiState.activeAction != UnlockAction.Biometric) {
+            screenState.requestFocusAndHandleKeyboard()
+        }
+    }
+
+
     LaunchedEffect(uiState.isUnlocked) {
         if (uiState.isUnlocked) {
             onSuccess()
@@ -98,7 +108,7 @@ fun UnlockScreen(
     // The boolean flips true→false when biometric ends, triggering this effect.
     LaunchedEffect(uiState.activeAction == UnlockAction.Biometric) {
         if (uiState.activeAction != UnlockAction.Biometric) {
-            passwordFocus.requestFocus()
+            screenState.requestFocusAndHandleKeyboard()
         }
     }
 
@@ -106,7 +116,7 @@ fun UnlockScreen(
     // snap focus back to the first password field so the user can retype immediately.
     LaunchedEffect(uiState.errorMessage) {
         if (uiState.errorMessage != null) {
-            passwordFocus.requestFocus()
+            screenState.requestFocusAndHandleKeyboard()
         }
     }
     Surface(
@@ -117,6 +127,11 @@ fun UnlockScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
+            LaunchedEffect(maxWidth, maxHeight) {
+                if (uiState.activeAction != UnlockAction.Biometric) {
+                    screenState.requestFocusAndHandleKeyboard()
+                }
+            }
             val headlineStyle = if (layout.widthClass == AdaptiveWidthClass.Expanded) {
                 MaterialTheme.typography.headlineLarge
             } else {
@@ -151,18 +166,9 @@ fun UnlockScreen(
                                 layout = layout,
                                 headlineStyle = headlineStyle,
                                 uiState = uiState,
-                                password = password,
-                                confirmPassword = confirmPassword,
-                                passwordVisible = passwordVisible,
-                                errorMessage = errorMessage,
-                                passwordFocus = passwordFocus,
-                                confirmFocus = confirmFocus,
-                                buttonFocus = buttonFocus,
+                                screenState = screenState,
                                 focusManager = focusManager,
                                 viewModel = viewModel,
-                                onPasswordChange = { password = it },
-                                onConfirmPasswordChange = { confirmPassword = it },
-                                onToggleVisibility = { passwordVisible = !passwordVisible },
                             )
                         }
                     )
@@ -175,18 +181,9 @@ fun UnlockScreen(
                                 layout = layout,
                                 headlineStyle = headlineStyle,
                                 uiState = uiState,
-                                password = password,
-                                confirmPassword = confirmPassword,
-                                passwordVisible = passwordVisible,
-                                errorMessage = errorMessage,
-                                passwordFocus = passwordFocus,
-                                confirmFocus = confirmFocus,
-                                buttonFocus = buttonFocus,
+                                screenState = screenState,
                                 focusManager = focusManager,
                                 viewModel = viewModel,
-                                onPasswordChange = { password = it },
-                                onConfirmPasswordChange = { confirmPassword = it },
-                                onToggleVisibility = { passwordVisible = !passwordVisible },
                             )
                         }
                     )
@@ -200,18 +197,9 @@ fun UnlockScreen(
                                 layout = layout,
                                 headlineStyle = headlineStyle,
                                 uiState = uiState,
-                                password = password,
-                                confirmPassword = confirmPassword,
-                                passwordVisible = passwordVisible,
-                                errorMessage = errorMessage,
-                                passwordFocus = passwordFocus,
-                                confirmFocus = confirmFocus,
-                                buttonFocus = buttonFocus,
+                                screenState = screenState,
                                 focusManager = focusManager,
                                 viewModel = viewModel,
-                                onPasswordChange = { password = it },
-                                onConfirmPasswordChange = { confirmPassword = it },
-                                onToggleVisibility = { passwordVisible = !passwordVisible },
                             )
                         }
                     )
@@ -388,18 +376,9 @@ private fun UnlockFormCard(
     layout: AdaptiveLayoutSpec,
     headlineStyle: androidx.compose.ui.text.TextStyle,
     uiState: com.sanket.tools.passwordmanager.ui.viewmodel.UnlockUiState,
-    password: String,
-    confirmPassword: String,
-    passwordVisible: Boolean,
-    errorMessage: String?,
-    passwordFocus: FocusRequester,
-    confirmFocus: FocusRequester,
-    buttonFocus: FocusRequester,
+    screenState: UnlockScreenState,
     focusManager: androidx.compose.ui.focus.FocusManager,
     viewModel: UnlockViewModel,
-    onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit,
-    onToggleVisibility: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -477,28 +456,30 @@ private fun UnlockFormCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (errorMessage != null) {
+            if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(20.dp))
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
                     color = MaterialTheme.colorScheme.errorContainer
                 ) {
-                    Text(
-                        text = errorMessage,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    uiState.errorMessage?.let {
+                        Text(
+                            text = it,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(28.dp))
 
             OutlinedTextField(
-                value = password,
+                value = screenState.password,
                 onValueChange = {
-                    onPasswordChange(it)
+                    screenState.password = it
                     viewModel.clearFeedback()
                 },
                 // keyboardOptions MUST declare ImeAction.Done so the IME
@@ -510,9 +491,9 @@ private fun UnlockFormCard(
                         if (!uiState.isBusy) {
                             if (uiState.mode == UnlockMode.Setup) {
                                 // In Setup mode, move to confirm-password field
-                                confirmFocus.requestFocus()
+                                screenState.confirmFocus.requestFocus()
                             } else {
-                                viewModel.login(password)
+                                viewModel.login(screenState.password.text)
                             }
                         }
                     }
@@ -520,16 +501,16 @@ private fun UnlockFormCard(
                 label = { Text("Master Password") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(passwordFocus),
-                visualTransformation = if (passwordVisible) {
+                    .focusRequester(screenState.passwordFocus),
+                visualTransformation = if (screenState.passwordVisible) {
                     VisualTransformation.None
                 } else {
                     PasswordVisualTransformation()
                 },
                 trailingIcon = {
-                    IconButton(onClick = onToggleVisibility) {
+                    IconButton(onClick = { screenState.passwordVisible = !screenState.passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible) {
+                            imageVector = if (screenState.passwordVisible) {
                                 Icons.Default.Visibility
                             } else {
                                 Icons.Default.VisibilityOff
@@ -546,9 +527,9 @@ private fun UnlockFormCard(
             if (uiState.mode == UnlockMode.Setup) {
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = confirmPassword,
+                    value = screenState.confirmPassword,
                     onValueChange = {
-                        onConfirmPasswordChange(it)
+                        screenState.confirmPassword = it
                         viewModel.clearFeedback()
                     },
                     // Enter on confirmPassword field submits the setup form
@@ -556,15 +537,15 @@ private fun UnlockFormCard(
                     keyboardActions = KeyboardActions(
                         onDone = {
                             if (!uiState.isBusy) {
-                                viewModel.setupMasterPassword(password, confirmPassword)
+                                viewModel.setupMasterPassword(screenState.password.text, screenState.confirmPassword.text)
                             }
                         }
                     ),
                     label = { Text("Confirm Password") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(confirmFocus),
-                    visualTransformation = if (passwordVisible) {
+                        .focusRequester(screenState.confirmFocus),
+                    visualTransformation = if (screenState.passwordVisible) {
                         VisualTransformation.None
                     } else {
                         PasswordVisualTransformation()
@@ -582,13 +563,13 @@ private fun UnlockFormCard(
             Button(
                 onClick = {
                     if (uiState.mode == UnlockMode.Setup) {
-                        viewModel.setupMasterPassword(password, confirmPassword)
+                        viewModel.setupMasterPassword(screenState.password.text, screenState.confirmPassword.text)
                     } else {
-                        viewModel.login(password)
+                        viewModel.login(screenState.password.text)
                     }
                 },
                 modifier = Modifier
-                    .focusRequester(buttonFocus)
+                    .focusRequester(screenState.buttonFocus)
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = !uiState.isBusy && uiState.mode != UnlockMode.Loading
@@ -662,5 +643,93 @@ private fun UnlockFormCard(
                 )
             }
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  State Holder
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Stable
+class UnlockScreenState(
+    passwordInitial: TextFieldValue,
+    confirmPasswordInitial: TextFieldValue,
+    passwordVisibleInitial: Boolean,
+    isInitialKeyboardShownInitial: Boolean,
+    val passwordFocus: FocusRequester,
+    val confirmFocus: FocusRequester,
+    val buttonFocus: FocusRequester,
+    private val keyboardController: SoftwareKeyboardController?,
+) {
+    var password by mutableStateOf(passwordInitial)
+    var confirmPassword by mutableStateOf(confirmPasswordInitial)
+    var passwordVisible by mutableStateOf(passwordVisibleInitial)
+    var isInitialKeyboardShown by mutableStateOf(isInitialKeyboardShownInitial)
+
+    fun requestFocusAndHandleKeyboard() {
+        try {
+            passwordFocus.requestFocus()
+            if (isInitialKeyboardShown) {
+                keyboardController?.hide()
+            } else {
+                isInitialKeyboardShown = true
+            }
+        } catch (e: Exception) {
+            // Ignore if not initialized
+        }
+    }
+
+    companion object {
+        fun Saver(
+            passwordFocus: FocusRequester,
+            confirmFocus: FocusRequester,
+            buttonFocus: FocusRequester,
+            keyboardController: SoftwareKeyboardController?
+        ): Saver<UnlockScreenState, *> = listSaver(
+            save = {
+                listOf(
+                    it.password.text,
+                    it.confirmPassword.text,
+                    it.passwordVisible,
+                    it.isInitialKeyboardShown
+                )
+            },
+            restore = {
+                UnlockScreenState(
+                    passwordInitial = TextFieldValue(it[0] as String),
+                    confirmPasswordInitial = TextFieldValue(it[1] as String),
+                    passwordVisibleInitial = it[2] as Boolean,
+                    isInitialKeyboardShownInitial = it[3] as Boolean,
+                    passwordFocus = passwordFocus,
+                    confirmFocus = confirmFocus,
+                    buttonFocus = buttonFocus,
+                    keyboardController = keyboardController
+                )
+            }
+        )
+    }
+}
+
+@Composable
+fun rememberUnlockScreenState(
+    keyboardController: SoftwareKeyboardController? = LocalSoftwareKeyboardController.current,
+    passwordFocus: FocusRequester = remember { FocusRequester() },
+    confirmFocus: FocusRequester = remember { FocusRequester() },
+    buttonFocus: FocusRequester = remember { FocusRequester() }
+): UnlockScreenState {
+    return rememberSaveable(
+        keyboardController, passwordFocus, confirmFocus, buttonFocus,
+        saver = UnlockScreenState.Saver(passwordFocus, confirmFocus, buttonFocus, keyboardController)
+    ) {
+        UnlockScreenState(
+            passwordInitial = TextFieldValue(""),
+            confirmPasswordInitial = TextFieldValue(""),
+            passwordVisibleInitial = false,
+            isInitialKeyboardShownInitial = false,
+            passwordFocus = passwordFocus,
+            confirmFocus = confirmFocus,
+            buttonFocus = buttonFocus,
+            keyboardController = keyboardController
+        )
     }
 }
