@@ -22,24 +22,28 @@ import com.sanket.tools.passwordmanager.ui.viewmodel.PassworldViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockViewModel
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
 fun App() {
     val session: PassworldSession = koinInject()
-    val unlockViewModel: UnlockViewModel = koinInject()
-    val passworldViewModel: PassworldViewModel = koinInject()
-    val addEditViewModel: AddEditViewModel = koinInject()
+    val unlockViewModel: UnlockViewModel = koinViewModel()
+    val passworldViewModel: PassworldViewModel = koinViewModel()
+    val addEditViewModel: AddEditViewModel = koinViewModel()
     val passworldKey by session.passworldKey.collectAsState()
     var hasUnlockedInThisSession by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        unlockViewModel.refreshStatus()
+//        unlockViewModel.refreshStatus()
 
         while (true) {
             delay(30000)
             session.checkTimeout()
         }
+    }
+    LaunchedEffect(Unit) {
+        unlockViewModel.refreshStatus()
     }
 
     LaunchedEffect(passworldKey) {
