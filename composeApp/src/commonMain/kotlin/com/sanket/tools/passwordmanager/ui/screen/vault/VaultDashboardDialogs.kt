@@ -1,4 +1,4 @@
-package com.sanket.tools.passwordmanager.ui.screen
+package com.sanket.tools.passwordmanager.ui.screen.vault
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -54,6 +54,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.sanket.tools.passwordmanager.domain.model.CredentialItem
 import com.sanket.tools.passwordmanager.domain.model.DecryptedField
+import com.sanket.tools.passwordmanager.ui.component.FieldItem
+import com.sanket.tools.passwordmanager.ui.component.TemplateChip
+import com.sanket.tools.passwordmanager.ui.component.VaultEntryBadge
+import com.sanket.tools.passwordmanager.ui.component.vaultBadgeText
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.util.ClipboardManager

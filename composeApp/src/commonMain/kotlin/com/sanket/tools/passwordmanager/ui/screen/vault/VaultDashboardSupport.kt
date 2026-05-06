@@ -1,4 +1,4 @@
-package com.sanket.tools.passwordmanager.ui.screen
+package com.sanket.tools.passwordmanager.ui.screen.vault
 
 import androidx.compose.runtime.saveable.Saver
 import com.sanket.tools.passwordmanager.data.crypto.currentTimeMillis
