@@ -1,4 +1,4 @@
-package com.sanket.tools.passwordmanager.ui.screen
+package com.sanket.tools.passwordmanager.ui.screen.vault
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +30,8 @@ import com.sanket.tools.passwordmanager.domain.model.CredentialItem
 import com.sanket.tools.passwordmanager.ui.layout.AdaptivePosture
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
+import com.sanket.tools.passwordmanager.ui.screen.vault.layout.SinglePaneLayout
+import com.sanket.tools.passwordmanager.ui.screen.vault.layout.TwoPaneLayout
 import com.sanket.tools.passwordmanager.ui.util.ClipboardManager
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditUiState
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditViewModel
@@ -351,4 +353,3 @@ internal fun vaultHeroTitleStyle(widthClass: AdaptiveWidthClass): TextStyle =
         AdaptiveWidthClass.Medium   -> MaterialTheme.typography.displayMedium
         AdaptiveWidthClass.Expanded -> MaterialTheme.typography.displayLarge
     }.copy(fontWeight = FontWeight.SemiBold)
-

@@ -15,8 +15,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import com.sanket.tools.passwordmanager.data.crypto.PassworldSession
 import com.sanket.tools.passwordmanager.theme.AppTheme
-import com.sanket.tools.passwordmanager.ui.screen.UnlockScreen
-import com.sanket.tools.passwordmanager.ui.screen.VaultDashboardScreen
+import com.sanket.tools.passwordmanager.ui.screen.unlock.UnlockScreen
+import com.sanket.tools.passwordmanager.ui.screen.vault.VaultDashboardScreen
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.PassworldViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockViewModel
