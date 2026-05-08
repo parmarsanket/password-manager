@@ -525,7 +525,7 @@ Done! ✅
 | `server` | Ktor backend (sample only, not used by vault) | JVM |
 
 ---
-
+<a id="tech-stack"></a>
 ## 🛠️ Tech Stack
 
 | Component | Version | Notes |
