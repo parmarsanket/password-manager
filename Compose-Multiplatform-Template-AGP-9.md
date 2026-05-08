@@ -1,45 +1,4 @@
-# 🔐 Passworld Manager
-
-> Offline-first password and credential vault built with Kotlin Multiplatform and Compose Multiplatform.
-
-<p align="center">
-
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.10.3-4285F4?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-[![Android](https://img.shields.io/badge/Android-minSdk%2024%20%7C%20targetSdk%2036-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
-[![Gradle](https://img.shields.io/badge/Gradle-9.5.0-02303A?logo=gradle&logoColor=white)](https://gradle.org/)
-[![Ktor](https://img.shields.io/badge/Ktor-3.4.2-087CFA)](https://ktor.io/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-
-</p>
-
-## 📚 Table of Contents
-
-- [Overview](#-overview)
-- [Feature Matrix](#-feature-matrix)
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [UI/UX Design](#-uiux-design)
-- [Security](#-security)
-- [Technical Stack](#-technical-stack)
-- [Folder Structure](#-folder-structure)
-- [Core Workflows](#-core-workflows)
-- [Performance Optimizations](#-performance-optimizations)
-- [Developer Guide](#-developer-guide)
-- [Testing Strategy](#-testing-strategy)
-- [Future Improvements](#-future-improvements)
-- [Implementation Notes](#-implementation-notes)
-
----
-
-## ✨ Project Snapshot
-
-- 🔐 Local-first vault with encrypted credential storage
-- 📱 Android and desktop JVM targets
-- 🖥 Adaptive layouts for phone, tablet, and desktop
-- 🧠 Kotlin Multiplatform + Compose Multiplatform stack
-- 📦 Encrypted import/export support
-- 🔑 Master-password and biometric/device unlock flows
+﻿# 🚀 Compose Multiplatform Template — AGP 9 + Kotlin 2.3 + Gradle 9 (Ready to Use)
 
 A production-ready **Compose Multiplatform (KMP)** template fully migrated to **AGP 9.0.1**, **Kotlin 2.3**, and **Gradle 9.1**. Build apps for **Android, iOS, Desktop (Windows/macOS/Linux), Web (JS + Wasm), and Server** — all from one codebase.
 
