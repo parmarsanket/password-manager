@@ -1294,4 +1294,4 @@ Compose recomposes UI with results
 
 Apache License 2.0 — see [LICENSE](LICENSE) for details.
 
-**Questions? Issues?** Check the [PRD.md](PRD.md) for comprehensive technical documentation.
+**Questions? Issues?** Check the [PRD.md](PRD.md) and [Compose-Multiplatform-Template-AGP-9.md](Compose-Multiplatform-Template-AGP-9.md)for comprehensive technical documentation.
