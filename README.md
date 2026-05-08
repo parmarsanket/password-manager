@@ -1,6 +1,8 @@
-# Passworld Manager
+# 🔐 Passworld Manager
 
-## GitHub-Ready Badges
+> Offline-first password and credential vault built with Kotlin Multiplatform and Compose Multiplatform.
+
+<p align="center">
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.10.3-4285F4?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
@@ -9,9 +11,39 @@
 [![Ktor](https://img.shields.io/badge/Ktor-3.4.2-087CFA)](https://ktor.io/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+</p>
+
+## 📚 Table of Contents
+
+- [Overview](#-overview)
+- [Feature Matrix](#-feature-matrix)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [UI/UX Design](#-uiux-design)
+- [Security](#-security)
+- [Technical Stack](#-technical-stack)
+- [Folder Structure](#-folder-structure)
+- [Core Workflows](#-core-workflows)
+- [Performance Optimizations](#-performance-optimizations)
+- [Developer Guide](#-developer-guide)
+- [Testing Strategy](#-testing-strategy)
+- [Future Improvements](#-future-improvements)
+- [Implementation Notes](#-implementation-notes)
+
 ---
 
-## Overview
+## ✨ Project Snapshot
+
+- 🔐 Local-first vault with encrypted credential storage
+- 📱 Android and desktop JVM targets
+- 🖥 Adaptive layouts for phone, tablet, and desktop
+- 🧠 Kotlin Multiplatform + Compose Multiplatform stack
+- 📦 Encrypted import/export support
+- 🔑 Master-password and biometric/device unlock flows
+
+---
+
+## 🌟 Overview
 
 Passworld Manager is an offline-first password and credential vault built with Kotlin Multiplatform and Compose Multiplatform. It stores flexible credential entries such as websites, bank accounts, SIM details, and any user-defined secure fields. Sensitive field values are encrypted locally before they are saved, and the app unlocks through a master password or platform device verification when available.
 
@@ -29,7 +61,7 @@ The project currently favors a local-first architecture: all core vault operatio
 
 ---
 
-## Feature Matrix
+## ✅ Feature Matrix
 
 | Feature | Status | Implementation evidence |
 |---|---:|---|
@@ -58,9 +90,9 @@ The project currently favors a local-first architecture: all core vault operatio
 
 ---
 
-## Features
+## ✨ Features
 
-### Authentication
+### 🔑 Authentication
 
 Passworld Manager has two authentication modes: first-run setup and returning-user login. The app decides which mode to show by reading `PassworldPrefs.isSetupComplete()` from preferences.
 
@@ -103,7 +135,7 @@ User enters master password
 
 The login path also includes legacy verifier support through `CryptoEngine.verifyPassword(...)`. If a legacy stored hash is accepted, the app upgrades it by saving the newer verifier format.
 
-### Biometric And Device Verification Unlock
+### 📱 Biometric And Device Verification Unlock
 
 Device verification exists as a convenience unlock path after a vault key has already been saved by the master password flow.
 
@@ -137,7 +169,7 @@ Related files:
 | Activity handoff for Android prompt | `ActivityProvider.android.kt`, `MainActivity.kt` |
 | UI trigger | `UnlockFormCard.kt` |
 
-### Session Locking
+### ⏱ Session Locking
 
 `PassworldSession` holds the vault key only in memory while the app is unlocked. The session has a 5 minute inactivity timeout.
 
@@ -151,7 +183,7 @@ Related files:
 
 There is no immediate background-lock policy in the current Android lifecycle code. `MainActivity` tracks activity availability for prompts and file operations, while timeout enforcement stays in the Compose root.
 
-### Password Management
+### 🗂 Password Management
 
 Credentials are modeled as an entry header plus any number of encrypted fields. This is more flexible than a fixed username/password table because the same editor can store website accounts, bank PINs, SIM PUK codes, customer IDs, and custom secrets.
 
@@ -185,7 +217,7 @@ Related classes:
 | ViewModel | `AddEditViewModel`, `AddEditUiState`, `FieldState` |
 | UI | `VaultDashboardScreen`, `VaultEditorDialog`, `FieldItem`, `VaultCredentialCard`, `VaultDetailDialog` |
 
-### Search
+### 🔎 Search
 
 Search filters entries by `siteOrApp` using a case-insensitive contains match in `PassworldViewModel.items`.
 
@@ -205,7 +237,7 @@ Related files:
 | `CollapsiblePortraitLayout.kt` | Mobile portrait search row |
 | `VaultPhoneLandscapeSidebar.kt` | Short landscape search |
 
-### Templates
+### 🧩 Templates
 
 The app does not persist categories as data. Instead, it provides quick templates in the new-entry dialog.
 
@@ -217,7 +249,7 @@ The app does not persist categories as data. Instead, it provides quick template
 
 `AddEditViewModel.applyTemplate(...)` avoids adding duplicate labels that are already present in the editor state. Templates only appear for new entries, not during edit mode.
 
-### Secret Reveal And Clipboard Copy
+### 👁 Secret Reveal And Clipboard Copy
 
 Secret fields are masked by default in the list and detail dialog. Users can reveal a secret field in `VaultDetailFieldCard`, and every detail field has a copy action.
 
@@ -231,7 +263,7 @@ Secret fields are masked by default in the list and detail dialog. Users can rev
 
 Security note: because clipboard auto-clear is not currently implemented, copied secrets remain in the system clipboard until overwritten by the OS or another app.
 
-### Export And Import
+### 📦 Export And Import
 
 The current backup implementation writes an encrypted JSON package, not a ZIP file. The package contains AES-GCM encrypted vault JSON plus metadata that includes a fresh export salt.
 
@@ -280,7 +312,7 @@ Related files:
 | Platform file IO | `BackupFileGateway.android.kt`, `BackupFileGateway.jvm.kt`, `BackupFileActivityBridge.android.kt` |
 | UI flow | `VaultDashboardSupport.kt`, `VaultDashboardDialogs.kt` |
 
-### Adaptive Layout
+### 📐 Adaptive Layout
 
 The UI uses a custom adaptive layout system rather than adding a separate window-size dependency. `adaptiveLayoutSpec(maxWidth, maxHeight)` evaluates both width and height so a rotated phone is not mistaken for a tablet.
 
@@ -302,7 +334,7 @@ Related files:
 | `VaultSidebar.kt` | Expanded/collapsed sidebar behavior |
 | `UnlockLayouts.kt` | Adaptive unlock screen layouts |
 
-### Desktop Support
+### 💻 Desktop Support
 
 Desktop JVM is a first-class active target. It starts Koin before opening a Compose Desktop `Window` titled `Passworld Manager`.
 
@@ -316,7 +348,7 @@ Desktop JVM is a first-class active target. It starts Koin before opening a Comp
 | Backup picker | AWT `FileDialog` |
 | Native packages | DMG, MSI, and DEB configured in `compose.desktop.nativeDistributions` |
 
-### Keyboard Navigation
+### ⌨ Keyboard Navigation
 
 The unlock flow contains explicit keyboard handling:
 
@@ -331,7 +363,7 @@ The unlock flow contains explicit keyboard handling:
 
 The vault search field also uses `ImeAction.Search`. Desktop-like keyboard affordances are strongest on the unlock screen; the vault editor and dialogs mostly rely on standard Material text fields and buttons.
 
-### Offline Support
+### 🌐 Offline Support
 
 The vault does not require a backend service. Room, DataStore/properties, keystore storage, import/export, search, and unlock all run locally. The `server` module is present but only exposes a sample root route:
 
@@ -341,7 +373,7 @@ GET / -> "Ktor: Hello, <platform>!"
 
 No sync, account system, cloud backup, or remote API is implemented.
 
-### Animations And Motion
+### 🎞 Animations And Motion
 
 Motion is implemented through Compose animation APIs and Material 3 Expressive theme support.
 
@@ -355,9 +387,9 @@ Motion is implemented through Compose animation APIs and Material 3 Expressive t
 
 ---
 
-## Architecture
+## 🏗 Architecture
 
-### High-Level Architecture Diagram
+### 🧱 High-Level Architecture Diagram
 
 ```text
 Android App / Desktop JVM App
@@ -388,7 +420,7 @@ Room DAO + Crypto + Preferences + Keystore
   - PassworldPrefs
 ```
 
-### Architecture Summary Table
+### 🏗 Architecture Summary Table
 
 | Layer | Responsibility | Key files |
 |---|---|---|
@@ -404,7 +436,7 @@ Room DAO + Crypto + Preferences + Keystore
 | Import/export | Backup package creation, encryption, file IO | `ExportCrypto`, `ExportManager`, `ImportManager`, `BackupFileGateway` |
 | Dependency injection | Koin modules and platform bindings | `AppModule.kt`, `PasswordManagerApp.kt`, desktop `main.kt` |
 
-### Project Structure
+### 🧩 Project Structure
 
 The Gradle project includes four modules:
 
@@ -415,7 +447,7 @@ The Gradle project includes four modules:
 | `shared` | Business logic, data, crypto contracts, repositories, ViewModels | Active for Android and JVM |
 | `server` | Minimal Ktor server sample | Active but not used by the vault |
 
-### MVVM Usage
+### 🧠 MVVM Usage
 
 The project uses a pragmatic MVVM structure:
 
@@ -427,7 +459,7 @@ The project uses a pragmatic MVVM structure:
 
 ViewModels expose `StateFlow` and keep suspend work inside `viewModelScope`. Compose screens collect state with `collectAsState()`.
 
-### State Management
+### 🗃 State Management
 
 State is split by lifetime:
 
@@ -439,7 +471,7 @@ State is split by lifetime:
 | `rememberSaveable` | UI state that should survive configuration changes | `VaultDialog`, dialog passwords, secret reveal state, unlock text field state |
 | `derivedStateOf` | Computed values that should not recalculate unnecessarily | selected item, total secret count, hero collapse values |
 
-### Navigation Structure
+### 🧭 Navigation Structure
 
 The project declares `navigation-compose`, but the current app does not define `NavHost`, routes, or destination composables. Navigation is session-gated:
 
@@ -461,7 +493,7 @@ VaultDialog
   - ImportBackup
 ```
 
-### Repository Pattern
+### 🧱 Repository Pattern
 
 `PasswordRepository` sits between ViewModels and `PasswordDao`. It intentionally does not encrypt or decrypt values; encryption is handled by ViewModels through `CryptoEngine` before calling the repository. This separation keeps database access simple and keeps cryptographic responsibilities explicit.
 
@@ -474,7 +506,7 @@ Write behavior:
 | Delete entry | Delete header; `CredentialField` rows are removed by Room foreign key cascade |
 | Clear all | `dao.clearAll()` exists but is not used by current import UI |
 
-### Data Flow
+### 🔁 Data Flow
 
 ```text
 Room Flow<List<EntryWithFields>>
@@ -496,7 +528,7 @@ VaultDashboardScreen -> VaultContentPane -> VaultCredentialCard
 
 No decrypted credential field is written back to Room. Decrypted values exist in memory as `String` values in `CredentialItem`, editor state, detail dialogs, and temporary export JSON.
 
-### Event Handling
+### 🎯 Event Handling
 
 The vault dashboard follows a clear state-holder pattern:
 
@@ -516,7 +548,7 @@ VaultDashboardContent
 
 This makes most UI components reusable and easier to preview because they do not call Koin or collect flows directly.
 
-### Dependency Injection
+### 🧪 Dependency Injection
 
 Koin provides the app graph.
 
@@ -540,9 +572,9 @@ Platform modules:
 
 ---
 
-## UI/UX Design
+## 🎨 UI/UX Design
 
-### Material 3 And Theme
+### 🎨 Material 3 And Theme
 
 The UI is built with Compose Material 3 and MaterialKolor.
 
@@ -558,7 +590,7 @@ The UI is built with Compose Material 3 and MaterialKolor.
 
 The codebase uses Material components such as `Scaffold`, `Surface`, `Card`, `OutlinedTextField`, `SuggestionChip`, `FloatingActionButton`, `AlertDialog`, and `FilledTonalButton`.
 
-### Responsive UI
+### 📱 Responsive UI
 
 The most important UI decision is that width and height are evaluated together. This prevents a phone in landscape from receiving a desktop/tablet two-pane experience that would be too tall for the available height.
 
@@ -569,7 +601,7 @@ BoxWithConstraints
   -> screen-specific layout branch
 ```
 
-### Vault Layout Behavior
+### 🪟 Vault Layout Behavior
 
 | Device/window posture | UI behavior |
 |---|---|
@@ -580,7 +612,7 @@ BoxWithConstraints
 
 The credential list uses a single `LazyColumn` on compact width and a `LazyVerticalStaggeredGrid` on medium/expanded width.
 
-### Unlock Layout Behavior
+### 🔓 Unlock Layout Behavior
 
 | Posture | Unlock layout |
 |---|---|
@@ -590,7 +622,7 @@ The credential list uses a single `LazyColumn` on compact width and a `LazyVerti
 
 The unlock form uses `imePadding()` and scrollable content so the form remains usable when the software keyboard is visible.
 
-### Accessibility Support
+### ♿ Accessibility Support
 
 Current accessibility support comes mainly from standard Material components and text labels:
 
@@ -613,9 +645,9 @@ Known accessibility gaps:
 
 ---
 
-## Security
+## 🔐 Security
 
-### Security Architecture
+### 🔐 Security Architecture
 
 ```text
 Master password
@@ -626,7 +658,7 @@ Master password
   -> encrypts/decrypts every CredentialField.encryptedValue
 ```
 
-### Encryption Approach
+### 🔒 Encryption Approach
 
 `CryptoEngine` is an `expect` class with Android and JVM actual implementations using `javax.crypto`.
 
@@ -644,7 +676,7 @@ Master password
 
 Every field encryption call generates a fresh random IV through `SecureRandom`.
 
-### Stored Data Classification
+### 🗃 Stored Data Classification
 
 | Data | Storage | Protection |
 |---|---|---|
@@ -659,7 +691,7 @@ Every field encryption call generates a fresh random IV through `SecureRandom`.
 | Saved vault key | Platform secure storage abstraction | Android Keystore-wrapped bytes or Desktop PKCS12 entry |
 | Master password | Not stored | Used only during setup/login derivation |
 
-### Keystore Strategy
+### 🔑 Keystore Strategy
 
 | Platform | Current implementation |
 |---|---|
@@ -669,7 +701,7 @@ Every field encryption call generates a fresh random IV through `SecureRandom`.
 
 Security nuance: Android device verification is enforced by the app before loading the saved vault key. The Android wrapping key is not configured in code with `setUserAuthenticationRequired(...)`, so a production hardening pass should bind keystore key usage to user authentication if the intended threat model requires it.
 
-### Biometric Security
+### 👁 Biometric Security
 
 Biometric unlock does not replace the master password. It is a gate that allows the app to load the previously saved vault key from platform storage.
 
@@ -681,11 +713,11 @@ Biometric / Windows Hello success
 
 If the secure key is missing, `UnlockViewModel` falls back to master password login and saves the derived key again after successful login.
 
-### Session Security
+### ⏳ Session Security
 
 `PassworldSession.stop()` attempts to reduce key lifetime by filling the in-memory key byte array with zeroes before clearing the `StateFlow`. This protects the vault key object held by the session, but decrypted `String` values may still exist temporarily in Compose state, domain models, or export/import buffers until garbage collected.
 
-### Backup Security
+### 💾 Backup Security
 
 Export/import uses a separate backup password and fresh salt for each export. The backup file stores:
 
@@ -697,7 +729,7 @@ ExportPackage JSON
 
 The export salt is not secret; it is required to derive the backup key during import. The backup file does not contain the master password or the vault key.
 
-### Security Checklist
+### 🔐 Security Checklist
 
 | Item | Status |
 |---|---:|
@@ -718,7 +750,7 @@ The export salt is not secret; it is required to derive the backup key during im
 
 ---
 
-## Technical Stack
+## 🧰 Technical Stack
 
 | Category | Technology / version | Where declared |
 |---|---|---|
@@ -745,7 +777,7 @@ The export salt is not secret; it is required to derive the backup key during im
 
 ---
 
-## Folder Structure
+## 📁 Folder Structure
 
 ```text
 Password-Manager/
@@ -855,7 +887,7 @@ Folder responsibilities:
 
 ---
 
-## Core Workflows
+## 🔄 Core Workflows
 
 ### App Launch Flow
 
@@ -931,7 +963,7 @@ Returning user
   -> PassworldSession.start(key)
 ```
 
-### Search Flow
+### 🔎 Search Flow
 
 ```text
 User types in VaultSearchField
@@ -943,7 +975,7 @@ User types in VaultSearchField
   -> UI recomposes list/grid
 ```
 
-### Adaptive Layout Behavior
+### 📐 Adaptive Layout Behavior
 
 ```text
 BoxWithConstraints
@@ -959,7 +991,7 @@ BoxWithConstraints
 
 ---
 
-## Performance Optimizations
+## ⚡ Performance Optimizations
 
 | Optimization | Where | Why it matters |
 |---|---|---|
@@ -988,9 +1020,9 @@ Current performance tradeoff: `PassworldViewModel.items` decrypts all fields for
 
 ---
 
-## Developer Guide
+## 🛠 Developer Guide
 
-### Requirements
+### 📦 Requirements
 
 | Tool | Requirement |
 |---|---|
@@ -999,7 +1031,7 @@ Current performance tradeoff: `PassworldViewModel.items` decrypts all fields for
 | Android SDK | compileSdk 36, minSdk 24 |
 | Gradle | Use the wrapper only |
 
-### Build And Run
+### ▶ Build And Run
 
 Windows PowerShell:
 
@@ -1034,7 +1066,7 @@ Useful outputs:
 | `:composeApp:packageDeb` | Linux package |
 | `:server:run` | Ktor server on port `8080` |
 
-### Coding Style
+### ✍ Coding Style
 
 | Area | Project convention |
 |---|---|
@@ -1046,7 +1078,7 @@ Useful outputs:
 | Platform APIs | Use `expect/actual` in `shared` for crypto, DB, prefs, export, clipboard |
 | UI components | Keep reusable components in `composeApp/src/commonMain/.../ui/component` |
 
-### Contribution Guide
+### 🤝 Contribution Guide
 
 Recommended workflow:
 
@@ -1068,7 +1100,7 @@ Suggested branch naming:
 | Documentation | `docs/prd-refresh` |
 | Refactor | `refactor/vault-dialog-state` |
 
-### Areas To Be Careful With
+### ⚠ Areas To Be Careful With
 
 | Area | Reason |
 |---|---|
@@ -1081,9 +1113,9 @@ Suggested branch naming:
 
 ---
 
-## Testing Strategy
+## 🧪 Testing Strategy
 
-### Existing Tests
+### 🧾 Existing Tests
 
 | Module | File | Current coverage |
 |---|---|---|
@@ -1091,7 +1123,7 @@ Suggested branch naming:
 | `composeApp` | `ComposeAppCommonTest.kt` | Placeholder arithmetic assertion |
 | `server` | `ApplicationTest.kt` | Verifies `GET /` returns OK and greeting text |
 
-### Recommended Test Coverage
+### 🎯 Recommended Test Coverage
 
 | Area | Tests to add |
 |---|---|
@@ -1106,7 +1138,7 @@ Suggested branch naming:
 
 ---
 
-## Future Improvements
+## 🚀 Future Improvements
 
 These improvements are not present in the current implementation but are realistic next steps.
 
@@ -1130,7 +1162,7 @@ These improvements are not present in the current implementation but are realist
 
 ---
 
-## Implementation Notes
+## 📝 Implementation Notes
 
 - The current product name used in UI is `Passworld Manager`; the Android string resource still says `Password Manager`.
 - The package name is `com.sanket.tools.passwordmanager`.
