@@ -21,7 +21,7 @@
 - [Project Structure](#-project-structure-deep-dive)
 - [Complete Architecture](#-complete-architecture)
 - [Getting Started](#-getting-started-in-5-minutes)
-- [Tech Stack](#-tech-stack)
+- [Tech Stack](#tech-stack)
 - [Security Architecture](#-security-architecture)
 - [Core Workflows](#-core-workflows)
 - [Testing & Quality](#-testing--quality)
