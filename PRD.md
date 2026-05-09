@@ -36,7 +36,7 @@ The project currently favors a local-first architecture: all core vault operatio
 | First-run master password setup | Implemented | `UnlockViewModel.setupMasterPassword`, `UnlockMode.Setup` |
 | Master password login | Implemented | `UnlockViewModel.login` |
 | Android biometric / device credential unlock | Implemented | `BiometricManager.android.kt`, `BiometricPrompt`, `BIOMETRIC_STRONG or DEVICE_CREDENTIAL` |
-| Desktop Windows Hello unlock | Implemented for Windows Desktop JVM | `BiometricManager.jvm.kt`, WinRT `UserConsentVerifier` via PowerShell |
+| Desktop device authentication | Implemented for Windows, macOS, and Linux | `BiometricManager.jvm.kt`, WinRT, Swift, and pkexec |
 | Session timeout / auto-lock | Implemented | `PassworldSession`, 5 minute timeout, 30 second check loop in `App.kt` |
 | Add/edit/delete credential entries | Implemented | `AddEditViewModel`, `PasswordRepository`, `VaultEditorDialog`, `VaultDetailDialog` |
 | Freeform credential fields | Implemented | `CredentialField`, `FieldState`, `FieldItem` |
@@ -110,8 +110,9 @@ Device verification exists as a convenience unlock path after a vault key has al
 | Platform | Behavior |
 |---|---|
 | Android | Uses `androidx.biometric.BiometricPrompt` with strong biometric or device credential |
-| Desktop JVM on Windows | Uses Windows Hello through WinRT `UserConsentVerifier` invoked by hidden PowerShell scripts |
-| Desktop JVM on non-Windows | `BiometricManager.shouldOfferAuthentication()` returns false |
+| Windows | Uses Windows Hello through WinRT `UserConsentVerifier` |
+| macOS | Uses Touch ID / Apple Watch via macOS `LocalAuthentication` framework |
+| Linux (Ubuntu) | Uses System Authentication via `pkexec` |
 | iOS | Placeholder file only; iOS target is not active |
 
 Technical flow:
@@ -312,7 +313,7 @@ Desktop JVM is a first-class active target. It starts Koin before opening a Comp
 | Database path | `%LOCALAPPDATA%/PassworldManager/password_manager.db` on Windows, `~/.passworldmanager` elsewhere |
 | Preferences | `SimpleDesktopPrefs` properties file to avoid DataStore locking issues in packaged builds |
 | Keystore | PKCS12 file `.password_manager_keystore.p12` in app data directory |
-| Device auth | Windows Hello bridge on Windows only |
+| Device auth | Windows Hello, macOS Touch ID, and Linux System Auth |
 | Backup picker | AWT `FileDialog` |
 | Native packages | DMG, MSI, and DEB configured in `compose.desktop.nativeDistributions` |
 
