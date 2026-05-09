@@ -18,57 +18,139 @@ actual class BiometricManager {
     @Volatile
     private var preferredMethod: VerificationMethod = VerificationMethod.UNKNOWN
 
-    actual fun shouldOfferAuthentication(): Boolean = isWindows()
+    actual fun shouldOfferAuthentication(): Boolean = isWindows() || isLinux() || isMac()
 
     actual fun canAuthenticate(): Boolean {
-        if (!isWindows()) return false
+        if (isWindows()) {
+            cachedAvailability?.let { return it }
 
-        cachedAvailability?.let { return it }
+            val isAvailable = runCatching {
+                executePowerShell(buildAvailabilityScript()).equals("Available", ignoreCase = true)
+            }.getOrDefault(false)
 
-        val isAvailable = runCatching {
-            executePowerShell(buildAvailabilityScript()).equals("Available", ignoreCase = true)
-        }.getOrDefault(false)
+            cachedAvailability = isAvailable
+            return isAvailable
+        }
 
-        cachedAvailability = isAvailable
-        return isAvailable
+        if (isLinux()) {
+            cachedAvailability?.let { return it }
+            val isAvailable = isPkexecAvailable()
+            cachedAvailability = isAvailable
+            return isAvailable
+        }
+
+        if (isMac()) {
+            cachedAvailability?.let { return it }
+            // On Mac, we check if the 'swift' command is available to run our auth script
+            val isAvailable = isSwiftAvailable()
+            cachedAvailability = isAvailable
+            return isAvailable
+        }
+
+        return false
     }
 
-    actual fun authenticationLabel(): String = "Windows Hello"
+    actual fun authenticationLabel(): String {
+        return when {
+            isWindows() -> "Windows Hello"
+            isLinux() -> "System Authentication"
+            isMac() -> "Touch ID"
+            else -> "Biometric"
+        }
+    }
 
     actual suspend fun authenticate(title: String, subtitle: String): AuthResult {
-        if (!isWindows()) return AuthResult.NotAvailable
-        return withContext(Dispatchers.Default) {
-            val promptMessage = listOf(title.trim(), subtitle.trim())
-                .filter { it.isNotBlank() }
-                .joinToString(System.lineSeparator())
+        if (isWindows()) {
+            return withContext(Dispatchers.Default) {
+                val promptMessage = listOf(title.trim(), subtitle.trim())
+                    .filter { it.isNotBlank() }
+                    .joinToString(System.lineSeparator())
 
-            val result = runVerification(promptMessage)
-                ?: return@withContext AuthResult.Failure("Windows Hello is unavailable right now.")
+                val result = runVerification(promptMessage)
+                    ?: return@withContext AuthResult.Failure("Windows Hello is unavailable right now.")
 
-            when (result) {
-                "Verified" -> {
-                    cachedAvailability = true
-                    AuthResult.Success
+                when (result) {
+                    "Verified" -> {
+                        cachedAvailability = true
+                        AuthResult.Success
+                    }
+
+                    "Canceled" -> AuthResult.Canceled
+                    RESULT_TIMEOUT -> AuthResult.Failure("Windows Hello did not complete. Try again.")
+                    "RetriesExhausted" -> AuthResult.Failure("Too many failed attempts. Try again in a moment.")
+                    "DeviceBusy" -> AuthResult.Failure("Windows Hello is busy. Try again.")
+                    "DisabledByPolicy" -> AuthResult.Failure("Windows Hello is disabled by policy on this device.")
+                    "NotConfiguredForUser" -> {
+                        cachedAvailability = false
+                        AuthResult.Failure("Set up Windows Hello PIN or fingerprint in Windows settings first.")
+                    }
+
+                    "DeviceNotPresent" -> {
+                        cachedAvailability = false
+                        AuthResult.NotAvailable
+                    }
+
+                    else -> AuthResult.Failure(unexpectedFailureMessage(result))
                 }
-
-                "Canceled" -> AuthResult.Canceled
-                RESULT_TIMEOUT -> AuthResult.Failure("Windows Hello did not complete. Try again.")
-                "RetriesExhausted" -> AuthResult.Failure("Too many failed attempts. Try again in a moment.")
-                "DeviceBusy" -> AuthResult.Failure("Windows Hello is busy. Try again.")
-                "DisabledByPolicy" -> AuthResult.Failure("Windows Hello is disabled by policy on this device.")
-                "NotConfiguredForUser" -> {
-                    cachedAvailability = false
-                    AuthResult.Failure("Set up Windows Hello PIN or fingerprint in Windows settings first.")
-                }
-
-                "DeviceNotPresent" -> {
-                    cachedAvailability = false
-                    AuthResult.NotAvailable
-                }
-
-                else -> AuthResult.Failure(unexpectedFailureMessage(result))
             }
         }
+
+        if (isLinux()) {
+            return withContext(Dispatchers.IO) {
+                try {
+                    // Trigger system authentication dialog via pkexec.
+                    val process = ProcessBuilder("pkexec", "true").start()
+                    val exitCode = process.waitFor()
+
+                    if (exitCode == 0) {
+                        AuthResult.Success
+                    } else {
+                        AuthResult.Canceled
+                    }
+                } catch (e: Exception) {
+                    AuthResult.Failure("System authentication failed: ${e.message}")
+                }
+            }
+        }
+
+        if (isMac()) {
+            return withContext(Dispatchers.IO) {
+                try {
+                    val promptMessage = listOf(title, subtitle).filter { it.isNotBlank() }.joinToString(": ")
+                    // We use a small Swift script to access the LocalAuthentication framework.
+                    // This supports Touch ID, Face ID, and Apple Watch.
+                    val script = """
+                        import LocalAuthentication
+                        import Foundation
+                        let context = LAContext()
+                        var error: NSError?
+                        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+                            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "$promptMessage") { success, _ in
+                                exit(success ? 0 : 1)
+                            }
+                            RunLoop.main.run()
+                        } else {
+                            exit(2)
+                        }
+                    """.trimIndent()
+
+                    val process = ProcessBuilder("swift", "-").start()
+                    process.outputStream.use { it.write(script.toByteArray()) }
+                    
+                    val exitCode = process.waitFor()
+                    when (exitCode) {
+                        0 -> AuthResult.Success
+                        1 -> AuthResult.Canceled
+                        2 -> AuthResult.Failure("Touch ID is not available or not configured.")
+                        else -> AuthResult.Failure("macOS authentication failed.")
+                    }
+                } catch (e: Exception) {
+                    AuthResult.Failure("macOS authentication failed: ${e.message}")
+                }
+            }
+        }
+
+        return AuthResult.NotAvailable
     }
 
 
@@ -128,6 +210,34 @@ actual class BiometricManager {
     private fun isWindows(): Boolean {
         return System.getProperty("os.name")
             ?.startsWith("Windows", ignoreCase = true) == true
+    }
+
+    private fun isLinux(): Boolean {
+        return System.getProperty("os.name")
+            ?.startsWith("Linux", ignoreCase = true) == true
+    }
+
+    private fun isMac(): Boolean {
+        return System.getProperty("os.name")
+            ?.startsWith("Mac", ignoreCase = true) == true
+    }
+
+    private fun isPkexecAvailable(): Boolean {
+        return try {
+            val process = ProcessBuilder("which", "pkexec").start()
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun isSwiftAvailable(): Boolean {
+        return try {
+            val process = ProcessBuilder("which", "swift").start()
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun executePowerShell(script: String): String {

@@ -439,7 +439,7 @@ USER ENTERS MASTER PASSWORD
 | Master password setup | ✅ Implemented | PBKDF2-HMAC-SHA256, 200k iterations |
 | Master password login | ✅ Implemented | Verifier comparison with SHA-256 |
 | Android biometric unlock | ✅ Implemented | Fingerprint or device credential |
-| Windows Hello unlock | ✅ Implemented | Desktop JVM via WinRT |
+| Desktop authentication | ✅ Implemented | Windows Hello, macOS Touch ID, Linux Auth |
 | Session timeout / auto-lock | ✅ Implemented | 5-minute inactivity timeout |
 | **Credentials** |
 | Add/edit/delete entries | ✅ Implemented | Full CRUD support |
@@ -868,7 +868,7 @@ Encrypted Field Values (stored in Room)
 |---|---|---|
 | **Master Password** | PBKDF2 derive → compare verifier | All |
 | **Biometric (Android)** | Fingerprint/device credential → load saved key | Android |
-| **Windows Hello** | WinRT UserConsentVerifier → load saved key | Windows Desktop |
+| **Biometric / System Auth** | Fingerprint, Windows Hello, Touch ID, Linux Auth | Android, Windows, macOS, Linux |
 | **Auto-lock** | 5-min timeout, keyboard/pointer events tracked | All |
 
 ### Device Key Storage
