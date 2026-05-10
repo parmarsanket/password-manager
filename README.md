@@ -446,7 +446,7 @@ USER ENTERS MASTER PASSWORD
 | Freeform custom fields | ✅ Implemented | Any label + secret/non-secret |
 | Secret reveal/hide | ✅ Implemented | Masked in list, reveal in detail |
 | Copy to clipboard | ✅ Implemented | Platform-specific clipboard managers |
-| Clipboard auto-clear | ⏳ Not implemented | Security gap—TODO |
+| Clipboard auto-clear & Security | ✅ Implemented | 30s auto-clear, Android URI Decoy, Desktop history bypass |
 | Search by site/app name | ✅ Implemented | Case-insensitive contains match |
 | Quick templates | ✅ Implemented | Website, Bank, SIM templates |
 | **Backup & Recovery** |
@@ -890,7 +890,6 @@ Encrypted Field Values (stored in Room)
 
 | Item | Issue | Mitigation |
 |---|---|---|
-| Clipboard auto-clear | Secrets remain in system clipboard after copy | Copy-to-clipboard with 30-60s timer (TODO) |
 | Android backup | OS backup may copy sensitive files | Add backup rules or set `allowBackup="false"` |
 | Android Keystore binding | Wrapping key not user-auth-required | Configure with user-auth-required flags |
 | Desktop secure storage | Weaker than OS-native | Use DPAPI (Windows), Keychain (macOS), libsecret (Linux) |
@@ -1224,7 +1223,6 @@ Compose recomposes UI with results
 
 ### 🔴 P0 (Critical)
 
-- [ ] Clipboard auto-clear timeout (30-60 seconds after copy)
 - [ ] Android backup hardening: `android:allowBackup="false"` or backup rules
 - [ ] Add comprehensive tests (crypto, repository, import/export)
 - [ ] Room schema migrations (currently at v1, no migration path)

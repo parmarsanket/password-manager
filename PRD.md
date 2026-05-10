@@ -42,7 +42,7 @@ The project currently favors a local-first architecture: all core vault operatio
 | Freeform credential fields | Implemented | `CredentialField`, `FieldState`, `FieldItem` |
 | Secret reveal/hide | Implemented | `VaultDetailFieldCard`, `FieldItem`, `PasswordVisualTransformation` |
 | Copy to clipboard | Implemented | `ClipboardManager.android.kt`, `ClipboardManager.jvm.kt` |
-| Clipboard auto-clear | Not implemented | No timer or clear operation exists after copy |
+| Clipboard auto-clear & Security | Implemented | 30s auto-clear, Android URI Decoy, Windows/Linux history exclusion |
 | Search | Implemented | `PassworldViewModel.onSearch`, `VaultSearchField` |
 | Categories as stored metadata | Not implemented | No category entity or column exists |
 | Quick templates | Implemented | `CategoryTemplate.WEBSITE`, `BANK`, `SIM` in `AddEditViewModel` |
@@ -226,11 +226,11 @@ Secret fields are masked by default in the list and detail dialog. Users can rev
 |---|---|
 | Masking in list | `VaultCredentialCard` shows bullet characters for secret preview values |
 | Detail reveal state | `rememberSaveable(field.fieldId, field.label)` |
-| Copy on Android | Android `ClipboardManager` with `ClipData.newPlainText(...)` |
-| Copy on Desktop JVM | AWT `Toolkit.getDefaultToolkit().systemClipboard` |
-| Clipboard clearing | Not implemented |
+| Copy on Android | Secure URI Decoy via `DecoyContentProvider` to bypass OEM clipboard history |
+| Copy on Desktop JVM | AWT `Transferable` with `ExcludeClipboardContentFromMonitorProcessing` and `x-kde-passwordManagerHint` |
+| Clipboard clearing | 30-second auto-clear timer with aggressive wipe techniques |
 
-Security note: because clipboard auto-clear is not currently implemented, copied secrets remain in the system clipboard until overwritten by the OS or another app.
+Security note: The clipboard implementation uses industry-leading techniques to prevent passwords from being saved in clipboard history (like Windows Win+V, Linux Klipper, or Samsung/Gboard history). Android uses a URI-based decoy system to feed dummy data to unauthorized clipboard monitors, while Desktop targets inject OS-level exclusion flags.
 
 ### Export And Import
 
@@ -710,7 +710,7 @@ The export salt is not secret; it is required to derive the backup key during im
 | PBKDF2 is used for key derivation | Pass |
 | Device verification unlock requires a saved vault key | Pass |
 | Import re-encrypts data with local vault key | Pass |
-| Clipboard auto-clear | Gap |
+| Clipboard auto-clear & History Prevention | Pass |
 | Android manifest backup hardening | Gap: `android:allowBackup="true"` is currently set |
 | Android Keystore auth-bound key usage | Gap: wrapping key is not configured with user-auth-required flags |
 | Desktop secure storage hardening | Gap: PKCS12 + username-derived password is weaker than OS-native DPAPI/macOS Keychain/libsecret |
@@ -1114,7 +1114,6 @@ These improvements are not present in the current implementation but are realist
 | Priority | Improvement | Reason |
 |---:|---|---|
 | P0 | Set `android:allowBackup="false"` or define secure backup rules | Prevent OS backup from copying sensitive app files unintentionally |
-| P0 | Add clipboard auto-clear | Reduce exposure after copying passwords |
 | P0 | Add crypto/repository/import-export tests | Protect against vault data loss and security regressions |
 | P0 | Add Room migrations before schema changes | Avoid destructive upgrades |
 | P1 | Bind Android Keystore wrapping key to user authentication | Strengthen biometric/device credential security boundary |
