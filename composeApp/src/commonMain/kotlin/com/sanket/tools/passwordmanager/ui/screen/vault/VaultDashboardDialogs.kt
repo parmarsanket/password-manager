@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,14 +61,16 @@ import com.sanket.tools.passwordmanager.ui.component.VaultEntryBadge
 import com.sanket.tools.passwordmanager.ui.component.vaultBadgeText
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
-import com.sanket.tools.passwordmanager.ui.util.ClipboardManager
+import androidx.compose.runtime.rememberCoroutineScope
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditUiState
 import com.sanket.tools.passwordmanager.ui.viewmodel.CategoryTemplate
+import com.sanket.tools.passwordmanager.ui.util.SecureClipboardManager
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun VaultDetailDialog(
     item: CredentialItem,
-    clipboardManager: ClipboardManager,
+    clipboardManager: SecureClipboardManager,
     onDismiss: () -> Unit,
     onEdit: (Long) -> Unit,
     onDelete: (Long) -> Unit
@@ -214,11 +217,12 @@ internal fun VaultDetailDialog(
 @Composable
 internal fun VaultDetailFieldCard(
     field: DecryptedField,
-    clipboardManager: ClipboardManager
+    clipboardManager: SecureClipboardManager
 ) {
     // Bug fix: unique key per field using both index and fieldId so that
     // unsaved fields (fieldId == 0) each get their own saveable slot
     var revealed by rememberSaveable(field.fieldId, field.label) { mutableStateOf(!field.isSecret) }
+    val scope = rememberCoroutineScope()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -259,7 +263,17 @@ internal fun VaultDetailFieldCard(
             }
 
             IconButton(
-                onClick = { clipboardManager.copyToClipboard(field.label, field.value) }
+                onClick = {
+                    scope.launch {
+                        clipboardManager.copySecure(
+                            label = field.label,
+                            text = field.value,
+                            isSensitive = true, // All fields hidden in clipboard preview on Android
+                            autoClearMillis = 30_000, // 30 seconds
+                            oneTimePaste = true
+                        )
+                    }
+                }
             ) {
                 Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
             }

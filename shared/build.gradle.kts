@@ -33,10 +33,13 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.datastore.preferences)
+            implementation(libs.kotlinx.datetime)
         }
         androidMain.dependencies {
             implementation(libs.androidx.datastore.preferences.android)
             implementation(libs.androidx.biometric)
+            implementation(libs.androidx.lifecycle.process)
+            implementation(libs.androidx.work.runtime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

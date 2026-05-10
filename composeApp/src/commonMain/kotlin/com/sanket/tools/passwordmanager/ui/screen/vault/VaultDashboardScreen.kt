@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -25,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.sanket.tools.passwordmanager.data.export.BackupFileGateway
 import com.sanket.tools.passwordmanager.domain.model.CredentialItem
 import com.sanket.tools.passwordmanager.ui.layout.AdaptivePosture
@@ -32,7 +35,7 @@ import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 import com.sanket.tools.passwordmanager.ui.layout.adaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.screen.vault.layout.SinglePaneLayout
 import com.sanket.tools.passwordmanager.ui.screen.vault.layout.TwoPaneLayout
-import com.sanket.tools.passwordmanager.ui.util.ClipboardManager
+import com.sanket.tools.passwordmanager.ui.util.SecureClipboardManager
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditUiState
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.CategoryTemplate
@@ -57,10 +60,25 @@ fun VaultDashboardScreen(
     val editorState by addEditViewModel.uiState.collectAsState()
 
     val backupFileGateway: BackupFileGateway = koinInject()
-    val clipboardManager:  ClipboardManager  = koinInject()
+    val clipboardManager:  SecureClipboardManager  = koinInject()
+    val clipboardState by clipboardManager.securityState.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        scope.launch {
+            clipboardManager.onAppForegrounded()
+        }
+    }
+
+    LaunchedEffect(clipboardState.remainingSeconds) {
+        if (clipboardState.remainingSeconds == 30) {
+            snackbarHostState.showSnackbar("Clipboard will be cleared in 30 seconds")
+        } else if (clipboardState.remainingSeconds == 1) {
+            snackbarHostState.showSnackbar("Clipboard cleared for security")
+        }
+    }
 
     // ── One nullable sealed interface replaces three separate state vars:
     //    selectedEntryId + showEditor + backupDialogMode
@@ -171,7 +189,7 @@ internal fun VaultDashboardContent(
     activeDialog: VaultDialog?,
     selectedItem: CredentialItem?,
     backupBusy: Boolean,
-    clipboardManager: ClipboardManager,
+    clipboardManager: SecureClipboardManager,
     snackbarHostState: SnackbarHostState,
     // ── actions ───────────────────────────────────────────────────────────────
     onSearchChange: (String) -> Unit,

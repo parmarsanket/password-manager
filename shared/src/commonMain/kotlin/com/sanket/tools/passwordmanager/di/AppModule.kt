@@ -11,6 +11,8 @@ import com.sanket.tools.passwordmanager.data.export.ImportManager
 import com.sanket.tools.passwordmanager.data.prefs.PassworldPrefsFactory
 import com.sanket.tools.passwordmanager.data.repository.PasswordRepository
 import com.sanket.tools.passwordmanager.ui.util.ClipboardManager
+import com.sanket.tools.passwordmanager.ui.util.SecureClipboardManager
+import com.sanket.tools.passwordmanager.ui.util.SecureClipboardManagerImpl
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.PassworldViewModel
 import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockViewModel
@@ -34,6 +36,7 @@ val cryptoModule = module {
     single { CryptoEngine() }
     single { PassworldSession() }
     single { ExportCrypto(get()) }
+    single<SecureClipboardManager> { SecureClipboardManagerImpl(get()) }
     // BiometricManager and ClipboardManager are provided via platformModule
 }
 
