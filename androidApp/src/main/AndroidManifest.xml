@@ -18,11 +18,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <provider
-            android:name="com.sanket.tools.passwordmanager.ui.util.DecoyContentProvider"
-            android:authorities="${applicationId}.decoyprovider"
-            android:exported="true" />
     </application>
 
 </manifest>

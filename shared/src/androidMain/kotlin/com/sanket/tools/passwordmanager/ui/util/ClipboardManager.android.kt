@@ -53,29 +53,19 @@ actual class ClipboardManager(private val context: Context) : DefaultLifecycleOb
     }
 
     actual fun copyToClipboard(label: String, text: String, isSensitive: Boolean) {
-        val clip = if (isSensitive) {
-            // 1. Store the real password in memory
-            SecureClipboardData.activePassword = text
-            
-            // 2. Create a URI pointing to our DecoyContentProvider
-            val uri = Uri.parse("content://${context.packageName}.decoyprovider/clip")
-            
-            // 3. Create a ClipData item holding ONLY the URI, but tell the OS it's plain text.
-            // When an app pastes, Android will query our ContentProvider for the text.
-            ClipData(label, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN), ClipData.Item(uri)).apply {
-                val extras = PersistableBundle().apply {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
-                    }
-                    putBoolean("android.content.extra.IS_SENSITIVE", true)
-                    putBoolean("com.google.android.content.extra.IS_SENSITIVE", true)
-                    putBoolean("com.samsung.android.content.clipdescription.extra.IS_SENSITIVE", true)
-                    putBoolean("android.content.extra.IS_REMOTE_COPY", false)
+        val clip = ClipData.newPlainText(label, text)
+        
+        if (isSensitive) {
+            val extras = PersistableBundle().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
                 }
-                description.extras = extras
+                // Backwards compatibility flags for keyboards
+                putBoolean("android.content.extra.IS_SENSITIVE", true)
+                putBoolean("com.google.android.content.extra.IS_SENSITIVE", true)
+                putBoolean("com.samsung.android.content.clipdescription.extra.IS_SENSITIVE", true)
             }
-        } else {
-            ClipData.newPlainText(label, text)
+            clip.description.extras = extras
         }
         
         clipboard.setPrimaryClip(clip)
@@ -121,9 +111,6 @@ actual class ClipboardManager(private val context: Context) : DefaultLifecycleOb
         } else {
             clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
         }
-        
-        // Clear our in-memory active password
-        SecureClipboardData.activePassword = null
         
         onCleared?.invoke()
     }
