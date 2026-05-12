@@ -54,7 +54,7 @@ internal fun CollapsiblePortraitLayout(
     onImport: () -> Unit,
     onExport: () -> Unit,
     onLogout: () -> Unit,
-    onEntrySelected: (Long) -> Unit,
+    onEntrySelected: (Long, androidx.compose.ui.geometry.Rect?) -> Unit,
 ) {
     val density   = LocalDensity.current
 

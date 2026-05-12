@@ -1,6 +1,7 @@
 package com.sanket.tools.passwordmanager.ui.screen.vault
 
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -43,6 +44,21 @@ import com.sanket.tools.passwordmanager.ui.viewmodel.CategoryTemplate
 import com.sanket.tools.passwordmanager.ui.viewmodel.PassworldViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  State holder — the ONLY composable allowed to touch ViewModels / Koin.
@@ -134,7 +150,7 @@ fun VaultDashboardScreen(
             addEditViewModel.prepareNewEntry()
             activeDialog = VaultDialog.AddEntry
         },
-        onEntrySelected = { activeDialog = VaultDialog.ViewEntry(it) },
+        onEntrySelected = { id, bounds -> activeDialog = VaultDialog.ViewEntry(id, bounds) },
         onEditEntry = { entryId ->
             addEditViewModel.loadEntry(entryId)
             activeDialog = VaultDialog.EditEntry(entryId)
@@ -196,7 +212,7 @@ fun VaultDashboardScreen(
 //  Pure UI — stateless, no ViewModel, no koinInject, no collectAsState.
 //  Receives all data and lambdas from the state holder above.
 // ─────────────────────────────────────────────────────────────────────────────
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun VaultDashboardContent(
     // ── data ─────────────────────────────────────────────────────────────────
@@ -212,7 +228,7 @@ internal fun VaultDashboardContent(
     // ── actions ───────────────────────────────────────────────────────────────
     onSearchChange: (String) -> Unit,
     onAddEntry: () -> Unit,
-    onEntrySelected: (Long) -> Unit,
+    onEntrySelected: (Long, androidx.compose.ui.geometry.Rect?) -> Unit,
     onEditEntry: (Long) -> Unit,
     onDeleteEntry: (Long) -> Unit,
     onEditorSiteNameChange: (String) -> Unit,
@@ -229,144 +245,167 @@ internal fun VaultDashboardContent(
     onDialogDismiss: () -> Unit,
     onBackupConfirm: (String) -> Unit,
 ) {
-    Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick        = onAddEntry,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor   = MaterialTheme.colorScheme.onPrimary,
+    SharedTransitionLayout {
+        val sharedTransitionScope = this
+        Box(Modifier.fillMaxSize()) {
+            
+            AnimatedVisibility(
+                visible = true,
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add entry")
+                val animatedVisibilityScope = this
+                CompositionLocalProvider(
+                    LocalSharedTransitionScope provides sharedTransitionScope,
+                    LocalAnimatedVisibilityScope provides animatedVisibilityScope
+                ) {
+                    Scaffold(
+                        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+                        floatingActionButton = {
+                            FloatingActionButton(
+                                onClick        = onAddEntry,
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor   = MaterialTheme.colorScheme.onPrimary,
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Add entry")
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ) { padding ->
+
+                        // ── Layout decision ─────────────────────────────────────────────────
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                        ) {
+                            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
+                            val heroTitleStyle = vaultHeroTitleStyle(layout.widthClass)
+
+                            when {
+                                layout.useTwoPaneLayout -> TwoPaneLayout(
+                                    layout          = layout,
+                                    sidebarModifier = Modifier,
+                                    heroTitleStyle  = heroTitleStyle,
+                                    searchQuery     = searchQuery,
+                                    totalEntries    = items.size,
+                                    totalSecrets    = totalSecrets,
+                                    items           = items,
+                                    onSearchChange  = onSearchChange,
+                                    onImport        = onImport,
+                                    onExport        = onExport,
+                                    onLogout        = onLogout,
+                                    onEntrySelected = onEntrySelected,
+                                )
+
+                                layout.posture == AdaptivePosture.PhoneLandscape -> TwoPaneLayout(
+                                    layout          = layout,
+                                    sidebarModifier = Modifier.width(layout.compactSidebarWidth),
+                                    heroTitleStyle  = heroTitleStyle,
+                                    searchQuery     = searchQuery,
+                                    totalEntries    = items.size,
+                                    totalSecrets    = totalSecrets,
+                                    items           = items,
+                                    onSearchChange  = onSearchChange,
+                                    onImport        = onImport,
+                                    onExport        = onExport,
+                                    onLogout        = onLogout,
+                                    onEntrySelected = onEntrySelected,
+                                )
+
+                                layout.widthClass == AdaptiveWidthClass.Medium -> SinglePaneLayout(
+                                    layout          = layout,
+                                    centered        = true,
+                                    heroTitleStyle  = heroTitleStyle,
+                                    searchQuery     = searchQuery,
+                                    totalEntries    = items.size,
+                                    totalSecrets    = totalSecrets,
+                                    items           = items,
+                                    onSearchChange  = onSearchChange,
+                                    onImport        = onImport,
+                                    onExport        = onExport,
+                                    onLogout        = onLogout,
+                                    onEntrySelected = onEntrySelected,
+                                )
+
+                                else -> SinglePaneLayout(
+                                    layout          = layout,
+                                    centered        = false,
+                                    heroTitleStyle  = heroTitleStyle,
+                                    searchQuery     = searchQuery,
+                                    totalEntries    = items.size,
+                                    totalSecrets    = totalSecrets,
+                                    items           = items,
+                                    onSearchChange  = onSearchChange,
+                                    onImport        = onImport,
+                                    onExport        = onExport,
+                                    onLogout        = onLogout,
+                                    onEntrySelected = onEntrySelected,
+                                )
+                            }
+                        }
+                    }
+                }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
 
-        // ── Layout decision ─────────────────────────────────────────────────
-        // Both maxWidth AND maxHeight are used so phone-landscape (wide + short)
-        // is never mistaken for a tablet (wide + tall).
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            val layout = adaptiveLayoutSpec(maxWidth, maxHeight)
+            // ── ViewEntry Dialog as Shared Transition Overlay ────────
+            AnimatedVisibility(
+                visible = activeDialog is VaultDialog.ViewEntry,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                val dialogVisibilityScope = this
+                CompositionLocalProvider(
+                    LocalSharedTransitionScope provides sharedTransitionScope,
+                    LocalAnimatedVisibilityScope provides dialogVisibilityScope
+                ) {
+                    val item = selectedItem
+                    if (item != null) {
+                        val viewDialog = activeDialog as? VaultDialog.ViewEntry
+                        VaultDetailDialog(
+                            item = item,
+                            sourceBounds = viewDialog?.sourceBounds,
+                            clipboardManager = clipboardManager,
+                            onDismiss = onDialogDismiss,
+                            onEdit = onEditEntry,
+                            onDelete = onDeleteEntry,
+                        )
+                    }
+                }
+            }
 
-            // vaultHeroTitleStyle is @Composable; Compose skips it automatically
-            // when widthClass hasn't changed, so no manual remember wrapper needed.
-            val heroTitleStyle = vaultHeroTitleStyle(layout.widthClass)
-
-            when {
-                // ── Tablet landscape / Desktop — full two-pane sidebar ────────
-                layout.useTwoPaneLayout -> TwoPaneLayout(
-                    layout          = layout,
-                    sidebarModifier = Modifier,   // sidebar manages its own animated width
-                    heroTitleStyle  = heroTitleStyle,
-                    searchQuery     = searchQuery,
-                    totalEntries    = items.size,
-                    totalSecrets    = totalSecrets,
-                    items           = items,
-                    onSearchChange  = onSearchChange,
-                    onImport        = onImport,
-                    onExport        = onExport,
-                    onLogout        = onLogout,
-                    onEntrySelected = onEntrySelected,
+            // ── Other Dialogs (using Window popups via AnimatedModalOverlay) ────────
+            when (val dialog = activeDialog) {
+                is VaultDialog.AddEntry,
+                is VaultDialog.EditEntry -> VaultEditorDialog(
+                    state                = editorState,
+                    onDismiss            = onEditorDismiss,
+                    onSiteNameChange     = onEditorSiteNameChange,
+                    onEmojiChange        = onEditorEmojiChange,
+                    onAddField           = onEditorAddField,
+                    onRemoveField        = onEditorRemoveField,
+                    onFieldChange        = onEditorFieldChange,
+                    onTemplateSelected   = onEditorTemplateSelected,
+                    onSave               = onEditorSave,
                 )
 
-                // ── Phone landscape — wide but very short, narrow action strip ─
-                layout.posture == AdaptivePosture.PhoneLandscape -> TwoPaneLayout(
-                    layout          = layout,
-                    // compactSidebarWidth replaces the old inline 220.dp magic number
-                    sidebarModifier = Modifier.width(layout.compactSidebarWidth),
-                    heroTitleStyle  = heroTitleStyle,
-                    searchQuery     = searchQuery,
-                    totalEntries    = items.size,
-                    totalSecrets    = totalSecrets,
-                    items           = items,
-                    onSearchChange  = onSearchChange,
-                    onImport        = onImport,
-                    onExport        = onExport,
-                    onLogout        = onLogout,
-                    onEntrySelected = onEntrySelected,
+                VaultDialog.ExportBackup -> BackupPasswordDialog(
+                    mode      = BackupDialogMode.Export,
+                    isBusy    = backupBusy,
+                    onDismiss = onDialogDismiss,
+                    onConfirm = onBackupConfirm,
                 )
 
-                // ── Tablet portrait — centered constrained single column ───────
-                layout.widthClass == AdaptiveWidthClass.Medium -> SinglePaneLayout(
-                    layout          = layout,
-                    centered        = true,
-                    heroTitleStyle  = heroTitleStyle,
-                    searchQuery     = searchQuery,
-                    totalEntries    = items.size,
-                    totalSecrets    = totalSecrets,
-                    items           = items,
-                    onSearchChange  = onSearchChange,
-                    onImport        = onImport,
-                    onExport        = onExport,
-                    onLogout        = onLogout,
-                    onEntrySelected = onEntrySelected,
+                VaultDialog.ImportBackup -> BackupPasswordDialog(
+                    mode      = BackupDialogMode.Import,
+                    isBusy    = backupBusy,
+                    onDismiss = onDialogDismiss,
+                    onConfirm = onBackupConfirm,
                 )
 
-                // ── Phone portrait — compact single column ────────────────────
-                else -> SinglePaneLayout(
-                    layout          = layout,
-                    centered        = false,
-                    heroTitleStyle  = heroTitleStyle,
-                    searchQuery     = searchQuery,
-                    totalEntries    = items.size,
-                    totalSecrets    = totalSecrets,
-                    items           = items,
-                    onSearchChange  = onSearchChange,
-                    onImport        = onImport,
-                    onExport        = onExport,
-                    onLogout        = onLogout,
-                    onEntrySelected = onEntrySelected,
-                )
+                else -> Unit
             }
         }
-    }
-
-    // ── Dialogs — rendered OUTSIDE Scaffold so they go truly full-screen ──────
-    // Exhaustive when on the sealed interface: compiler catches missing branches.
-    when (val dialog = activeDialog) {
-        is VaultDialog.ViewEntry -> selectedItem?.let { item ->
-            VaultDetailDialog(
-                item             = item,
-                clipboardManager = clipboardManager,
-                onDismiss        = onDialogDismiss,
-                onEdit           = onEditEntry,
-                onDelete         = onDeleteEntry,
-            )
-        }
-
-        is VaultDialog.AddEntry,
-        is VaultDialog.EditEntry -> VaultEditorDialog(
-            state                = editorState,
-            onDismiss            = onEditorDismiss,
-            onSiteNameChange     = onEditorSiteNameChange,
-            onEmojiChange        = onEditorEmojiChange,
-            onAddField           = onEditorAddField,
-            onRemoveField        = onEditorRemoveField,
-            onFieldChange        = onEditorFieldChange,
-            onTemplateSelected   = onEditorTemplateSelected,
-            onSave               = onEditorSave,
-        )
-
-        VaultDialog.ExportBackup -> BackupPasswordDialog(
-            mode      = BackupDialogMode.Export,
-            isBusy    = backupBusy,
-            onDismiss = onDialogDismiss,
-            onConfirm = onBackupConfirm,
-        )
-
-        VaultDialog.ImportBackup -> BackupPasswordDialog(
-            mode      = BackupDialogMode.Import,
-            isBusy    = backupBusy,
-            onDismiss = onDialogDismiss,
-            onConfirm = onBackupConfirm,
-        )
-
-        null -> Unit
     }
 }
 

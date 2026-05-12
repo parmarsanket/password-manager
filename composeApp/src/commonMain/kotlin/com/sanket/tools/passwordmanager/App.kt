@@ -23,6 +23,7 @@ import com.sanket.tools.passwordmanager.ui.viewmodel.UnlockViewModel
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 @Preview
@@ -38,7 +39,7 @@ fun App() {
 //        unlockViewModel.refreshStatus()
 
         while (true) {
-            delay(30000)
+            delay(30000.milliseconds)
             session.checkTimeout()
         }
     }

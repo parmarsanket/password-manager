@@ -18,11 +18,11 @@ sealed interface VaultDialog {
     data class EditEntry(val entryId: Long) : VaultDialog
 
     /** Row tapped — show read-only detail for this entry. */
-    data class ViewEntry(val entryId: Long) : VaultDialog
+    data class ViewEntry(val entryId: Long, val sourceBounds: androidx.compose.ui.geometry.Rect? = null) : VaultDialog
 
     /** User chose Export from the hero card actions. */
     data object ExportBackup : VaultDialog
-
+    
     /** User chose Import from the hero card actions. */
     data object ImportBackup : VaultDialog
 }

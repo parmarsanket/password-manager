@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveLayoutSpec
@@ -17,7 +18,9 @@ import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
 @Composable
 fun VaultEntryBadge(
     text: String,
-    layout: AdaptiveLayoutSpec
+    layout: AdaptiveLayoutSpec,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.92f),
+    contentColor: Color = MaterialTheme.colorScheme.primary
 ) {
     val badgeSize = when (layout.widthClass) {
         AdaptiveWidthClass.Compact -> 52.dp
@@ -40,7 +43,7 @@ fun VaultEntryBadge(
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.92f)
+        color = containerColor
     ) {
         Box(
             modifier = Modifier.size(badgeSize),
@@ -49,7 +52,7 @@ fun VaultEntryBadge(
             Text(
                 text = text,
                 style = badgeTextStyle,
-                color = MaterialTheme.colorScheme.primary,
+                color = contentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

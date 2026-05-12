@@ -31,7 +31,7 @@ internal fun TwoPaneLayout(
     onImport: () -> Unit,
     onExport: () -> Unit,
     onLogout: () -> Unit,
-    onEntrySelected: (Long) -> Unit,
+    onEntrySelected: (Long, androidx.compose.ui.geometry.Rect?) -> Unit,
 ) {
     Row(
         modifier = Modifier

@@ -23,7 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,13 +35,14 @@ import com.sanket.tools.passwordmanager.ui.component.VaultFieldPreview
 import com.sanket.tools.passwordmanager.ui.component.vaultBadgeText
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveLayoutSpec
 import com.sanket.tools.passwordmanager.ui.layout.AdaptiveWidthClass
+import com.sanket.tools.passwordmanager.ui.screen.vault.vaultEntryColorScheme
 
 @Composable
 internal fun VaultContentPane(
     modifier: Modifier,
     layout: AdaptiveLayoutSpec,
     items: List<CredentialItem>,
-    onEntrySelected: (Long) -> Unit
+    onEntrySelected: (Long, androidx.compose.ui.geometry.Rect?) -> Unit
 ) {
     val cardSpacing = when (layout.widthClass) {
         AdaptiveWidthClass.Compact -> 14.dp
@@ -70,8 +72,7 @@ internal fun VaultContentPane(
                             VaultCredentialCard(
                                 layout    = layout,
                                 item      = item,
-                                cardIndex = item.entryId,
-                                onClick   = { onEntrySelected(item.entryId) },
+                                onClick   = { bounds -> onEntrySelected(item.entryId, bounds) },
                             )
                         }
                     }
@@ -94,8 +95,7 @@ internal fun VaultContentPane(
                         VaultCredentialCard(
                             layout = layout,
                             item = item,
-                            cardIndex = item.entryId,
-                            onClick = { onEntrySelected(item.entryId) }
+                            onClick = { bounds -> onEntrySelected(item.entryId, bounds) }
                         )
                     }
                 }
@@ -108,8 +108,7 @@ internal fun VaultContentPane(
 internal fun VaultCredentialCard(
     layout: AdaptiveLayoutSpec,
     item: CredentialItem,
-    cardIndex: Long,
-    onClick: () -> Unit
+    onClick: (androidx.compose.ui.geometry.Rect) -> Unit
 ) {
     val cardPadding = when (layout.widthClass) {
         AdaptiveWidthClass.Compact -> 18.dp
@@ -126,26 +125,24 @@ internal fun VaultCredentialCard(
         AdaptiveWidthClass.Medium -> MaterialTheme.typography.headlineSmall
         AdaptiveWidthClass.Expanded -> MaterialTheme.typography.headlineMedium
     }.copy(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium
+        fontWeight = FontWeight.SemiBold
     )
     val previewFields = item.fields.take(2)
-    // Bug fix: use .mod(size) on hashCode() so very large Long entryIds
-    // don't overflow Int and produce a negative mod result
-    val cardColors = listOf(
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.68f),
-        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.68f),
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f)
-    )
-    val colorIndex = item.entryId.hashCode().and(0x7FFF_FFFF).mod(cardColors.size)
+    val entryColors = vaultEntryColorScheme(item.entryId)
+
+    val boundsRef = androidx.compose.runtime.remember { arrayOf(androidx.compose.ui.geometry.Rect.Zero) }
+
+    val cardModifier = Modifier
+        .fillMaxWidth()
+        .onGloballyPositioned { coordinates -> boundsRef[0] = coordinates.boundsInWindow() }
 
     Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        onClick = { onClick(boundsRef[0]) },
+        modifier = cardModifier,
         shape = RoundedCornerShape(cardShape),
         colors = CardDefaults.cardColors(
-            containerColor = cardColors[colorIndex]
+            containerColor = entryColors.container,
+            contentColor = entryColors.onContainer
         )
     ) {
         Column(
@@ -159,10 +156,14 @@ internal fun VaultCredentialCard(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                VaultEntryBadge(
-                    text = vaultBadgeText(item.iconEmoji, item.siteOrApp),
-                    layout = layout
-                )
+                Box {
+                    VaultEntryBadge(
+                        text = vaultBadgeText(item.iconEmoji, item.siteOrApp),
+                        layout = layout,
+                        containerColor = entryColors.badgeContainer,
+                        contentColor = entryColors.badgeContent
+                    )
+                }
 
                 Column(
                     modifier = Modifier.weight(1f),
@@ -171,14 +172,14 @@ internal fun VaultCredentialCard(
                     Text(
                         text = item.siteOrApp,
                         style = titleStyle,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = entryColors.onContainer,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${item.fields.size} saved field${if (item.fields.size == 1) "" else "s"}",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = entryColors.supportingText
                     )
                 }
             }
@@ -187,13 +188,14 @@ internal fun VaultCredentialCard(
                 if (previewFields.isEmpty()) {
                     Surface(
                         shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.82f)
+                        color = entryColors.fieldContainer,
+                        contentColor = entryColors.onContainer
                     ) {
                         Text(
                             text = "No fields saved yet",
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = entryColors.supportingText
                         )
                     }
                 } else {
@@ -201,7 +203,8 @@ internal fun VaultCredentialCard(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.82f)
+                            color = entryColors.fieldContainer,
+                            contentColor = entryColors.onContainer
                         ) {
                             Box(
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
@@ -209,7 +212,9 @@ internal fun VaultCredentialCard(
                                 VaultFieldPreview(
                                     layout = layout,
                                     label = field.label,
-                                    value = if (field.isSecret) "\u2022".repeat(10) else field.value
+                                    value = if (field.isSecret) "\u2022".repeat(10) else field.value,
+                                    labelColor = entryColors.supportingText,
+                                    valueColor = entryColors.onContainer
                                 )
                             }
                         }
@@ -220,7 +225,7 @@ internal fun VaultCredentialCard(
             Text(
                 text = "Tap or click to view, copy, edit, or delete",
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = entryColors.supportingText
             )
         }
     }
