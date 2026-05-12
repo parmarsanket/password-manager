@@ -65,6 +65,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.sanket.tools.passwordmanager.ui.viewmodel.AddEditUiState
 import com.sanket.tools.passwordmanager.ui.viewmodel.CategoryTemplate
 import com.sanket.tools.passwordmanager.ui.util.SecureClipboardManager
+import com.sanket.tools.passwordmanager.ui.util.ClipboardFeatureFlags
 import kotlinx.coroutines.launch
 
 @Composable
@@ -268,9 +269,9 @@ internal fun VaultDetailFieldCard(
                         clipboardManager.copySecure(
                             label = field.label,
                             text = field.value,
-                            isSensitive = true, // All fields hidden in clipboard preview on Android
-                            autoClearMillis = 30_000, // 30 seconds
-                            oneTimePaste = true
+                            isSensitive = ClipboardFeatureFlags.markAsSensitive,
+                            autoClearMillis = ClipboardFeatureFlags.autoClearTimeoutMillis,
+                            oneTimePaste = ClipboardFeatureFlags.oneTimePasteEnabled
                         )
                     }
                 }

@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.Lifecycle
@@ -66,10 +67,27 @@ fun VaultDashboardScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope             = rememberCoroutineScope()
 
+    // ── One-time paste: clear clipboard when app returns to foreground ─────
+    // Android: LifecycleEventEffect(ON_RESUME) fires reliably.
+    // Desktop: ON_RESUME does NOT fire on window focus changes, so we
+    //          use LocalWindowInfo.isWindowFocused as a cross-platform fallback.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         scope.launch {
             clipboardManager.onAppForegrounded()
         }
+    }
+
+    // Desktop (Windows/Linux) window focus detection for one-time paste.
+    // Tracks focus transitions: when isWindowFocused goes false → true,
+    // the user has returned from another app (where they likely pasted).
+    val windowInfo = LocalWindowInfo.current
+    var wasWindowFocused by remember { mutableStateOf(windowInfo.isWindowFocused) }
+    LaunchedEffect(windowInfo.isWindowFocused) {
+        if (windowInfo.isWindowFocused && !wasWindowFocused) {
+            // Window regained focus — user returned from another app
+            clipboardManager.onAppForegrounded()
+        }
+        wasWindowFocused = windowInfo.isWindowFocused
     }
 
     LaunchedEffect(clipboardState.remainingSeconds) {
